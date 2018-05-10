@@ -1,0 +1,19 @@
+{
+  "name": "dispatchmanagerbackend",
+  "version": "1.0.0",
+  "description": "Back end for dispatch manager",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/benf223/DispatchManagerBackEnd.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/benf223/DispatchManagerBackEnd/issues"
+  },
+  "homepage": "https://github.com/benf223/DispatchManagerBackEnd#readme"
+}
