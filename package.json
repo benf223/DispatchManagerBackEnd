@@ -1,23 +1,21 @@
 {
-  "name": "dispatchmanagerbackend",
+  "name": "recur_planner",
   "version": "1.0.0",
-  "description": "Back end for dispatch manager",
-  "main": "server.js",
+  "description": "Display and allocate truck dispatches for Recur orders",
+  "main": "index.js",
   "scripts": {
-    "test": "mocha"
+    "test": "node mocha"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/benf223/DispatchManagerBackEnd.git"
-  },
-  "author": "",
+  "author": "Neil Read, Sean Tuson, Peter Wang, Ben Fisher, Long Nguyen",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/benf223/DispatchManagerBackEnd/issues"
-  },
-  "homepage": "https://github.com/benf223/DispatchManagerBackEnd#readme",
-  "devDependencies": {
+  "dependencies": {
+    "bootstrap": "^4.1.1",
     "chai": "^4.1.2",
-    "mocha": "^5.1.1"
+    "express": "^4.16.3",
+    "mocha": "^5.1.1",
+    "mysql": "^2.15.0"
+  },
+  "devDependencies": {
+    "jasmine": "^3.1.0"
   }
 }
