@@ -1,4 +1,4 @@
-var sample = require('../server');
+var sample = require('../test');
 var expect = require('chai').expect;
 
 describe('sample()', function () {
