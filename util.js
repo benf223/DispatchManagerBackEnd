@@ -16,6 +16,17 @@ function parseTimeOfDay(str)
     return hours.substr(hours.length - 2) + ":" + minutes.substr(minutes.length - 2);
 }
 
+function objEql(obj1, obj2)
+{
+    obj1.foreach((prop) =>
+    {
+        if(obj1[prop] != obj2[prop]) return false;
+    });
+
+    return true;
+}
+
 module.exports = {
-    parseTimeOfDay
+    parseTimeOfDay,
+    objEql
 }

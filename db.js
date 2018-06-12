@@ -1,22 +1,35 @@
+/**
+ * Author: Neil Read
+ */
+
 const MongoClient = require("mongodb").MongoClient;
 const util = require("./util");
-const dbName = "recur_db";
-const url = "mongodb://localhost:27017/recur_db";
+const dbName = "test_db"; // "test_db" or "recur_db"
+const url = "mongodb://localhost:27017/" + dbName;
 
 const locationTypes = ["Yard", "Port", "Rail"];
 
-async function insert(collection, value)
+async function insert(collection, containsQuery, value)
 {
-    MongoClient.connect(url, (err, db) =>
+    let db = null;
+    return await MongoClient.connect(url).then(async (val) =>
     {
-        if(err) throw err;
+        db = val;
+        return await contains(collection, containsQuery)
+    }).then(async (val) =>
+    {
+        if(val) throw new Error(collection + " already contains entry");
 
-        db.db(dbName).collection(collection).insertOne(value, (err, res) =>
-        {
-            if(err) throw err;
-            console.log("inserted into " + collection);
-            db.close();
-        });
+        return await db.db(dbName).collection(collection).insertOne(value);
+    }).then(async (val) =>
+    {
+        db.close();
+        console.log("inserted into " + collection);
+        return val.ops[0];
+    }).catch((err) =>
+    {
+        if(db) db.close();
+        throw err;
     });
 }
 
@@ -32,15 +45,25 @@ async function insert(collection, value)
 async function insertLocation(name, address, type = "Yard", openingTime = null, closingTime = null, requiresBooking = false)
 {
     // To do: Check if address is valid for Google Maps API
-
     if(!locationTypes.includes(type)) throw new Error("Location type not valid");
     openingTime = util.parseTimeOfDay(openingTime);
     closingTime = util.parseTimeOfDay(closingTime);
     if(typeof(requiresBooking) != "boolean") throw new Error("Booking requirement invalid");
 
-    //console.log(await contains("locations", null));
+    let containsQuery = {$or: [{ name: name }, { address: address }]};
+    let entry = {
+        name : name, 
+        address : address, 
+        type : type, 
+        openingTime : openingTime, 
+        closingTime : closingTime, 
+        requiresBooking : requiresBooking
+    }
 
-    await insert("locations", {name : name, address : address, type : type, openingTime : openingTime, closingTime : closingTime, requiresBooking : requiresBooking});
+    return await insert("locations", containsQuery, entry).then((res) =>
+    {
+        return res;
+    });
 }
 
 /**
@@ -51,7 +74,10 @@ async function insertLocation(name, address, type = "Yard", openingTime = null, 
  */
 async function insertDriver(name, availableDays, avoidLocations)
 {
-    await insert("drivers", {name : name, availableDays : availableDays, avoidLocations : avoidLocations});
+    return await insert("drivers", null, {name : name, availableDays : availableDays, avoidLocations : avoidLocations}).then((res) =>
+    {
+        return res;
+    });
 }
 
 /**
@@ -60,31 +86,27 @@ async function insertDriver(name, availableDays, avoidLocations)
  * @param {Object} query - Query to filter search
  * @param {Function} callback 
  */
-async function queryDB(collection, query, callback)
+async function queryDB(collection, query)
 {
-    await MongoClient.connect(url, async (err, db) =>
+    return await MongoClient.connect(url).then(async (db) =>
     {
-        if(err) throw err;
-
         var docs = await db.db(dbName).collection(collection).find(query).toArray();
-        callback(docs);
         db.close();
+        return docs;
     });
 }
 
 async function contains(collection, query)
 {
-    Promise.resolve(await queryDB(collection, query, (docs) =>
+    return await queryDB(collection, query).then((docs) =>
     {
-        //console.log(docs);
-        console.log(docs.length > 0);
-        Promise.resolve(docs.length > 0);
-    }));
+        console.log(docs);
+        return docs.length > 0;
+    });
 }
 
-//insertDriver("Neil", "Hello", "World");
-insertLocation("Place", "123 Random Street", "Port", "6:30", "20:00", true);
-queryDB("locations", null, (docs) =>
-{
-    //console.log(docs);
-});
+module.exports = {
+    insertDriver,
+    insertLocation,
+    dbName
+}
