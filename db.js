@@ -6,7 +6,6 @@ const MongoClient = require("mongodb").MongoClient;
 const util = require("./util");
 const dbName = "test_db"; // "test_db" or "recur_db"
 const url = "mongodb://localhost:27017/" + dbName;
-
 const locationTypes = ["Yard", "Port", "Rail"];
 
 async function insert(collection, containsQuery, value)
@@ -19,12 +18,10 @@ async function insert(collection, containsQuery, value)
     }).then(async (val) =>
     {
         if(val) throw new Error(collection + " already contains entry");
-
         return await db.db(dbName).collection(collection).insertOne(value);
     }).then(async (val) =>
     {
         db.close();
-        console.log("inserted into " + collection);
         return val.ops[0];
     }).catch((err) =>
     {
@@ -60,10 +57,7 @@ async function insertLocation(name, address, type = "Yard", openingTime = null, 
         requiresBooking : requiresBooking
     }
 
-    return await insert("locations", containsQuery, entry).then((res) =>
-    {
-        return res;
-    });
+    return await insert("locations", containsQuery, entry).then((res) => res);
 }
 
 /**
@@ -74,17 +68,13 @@ async function insertLocation(name, address, type = "Yard", openingTime = null, 
  */
 async function insertDriver(name, availableDays, avoidLocations)
 {
-    return await insert("drivers", null, {name : name, availableDays : availableDays, avoidLocations : avoidLocations}).then((res) =>
-    {
-        return res;
-    });
+    return await insert("drivers", null, {name : name, availableDays : availableDays, avoidLocations : avoidLocations}).then((res) => res);
 }
 
 /**
  * 
  * @param {string} collection - Name of collection to search
  * @param {Object} query - Query to filter search
- * @param {Function} callback 
  */
 async function queryDB(collection, query)
 {
@@ -98,11 +88,7 @@ async function queryDB(collection, query)
 
 async function contains(collection, query)
 {
-    return await queryDB(collection, query).then((docs) =>
-    {
-        console.log(docs);
-        return docs.length > 0;
-    });
+    return await queryDB(collection, query).then((docs) => docs.length > 0);
 }
 
 module.exports = {
