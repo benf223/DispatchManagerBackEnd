@@ -4,9 +4,62 @@
 
 const MongoClient = require("mongodb").MongoClient;
 const util = require("./util");
-const dbName = "test_db"; // "test_db" or "recur_db"
+const dbName = "recur_db"; // "test_db" or "recur_db"
 const url = "mongodb://localhost:27017/" + dbName;
 const locationTypes = ["Yard", "Port", "Rail"];
+
+/*class Collection
+{
+    constructor(validateFields)
+    {
+        this.validateFields = validateFields;
+    }
+
+    validate(fields)
+    {
+        fields.
+    }
+}*/
+
+async function connectDB(callback)
+{
+    let db = null;
+    return await MongoClient.connect(url).then(async (val) =>
+    {
+        db = val;
+        return await callback(db);
+    }).then((val) =>
+    {
+        db.close();
+    }).catch((err) =>
+    {
+        if(db) db.close();
+        throw err;
+    });
+}
+
+async function update(collection, identifierQuery, updateQuery)
+{
+    connectDB((db) =>
+    {
+        return await db.db(dbName).collection(collection).updateOne(identifierQuery, updateQuery);
+    });
+}
+
+async function removeLocation(name)
+{
+    return await remove("locations", {name: name});
+}
+
+async function removeDriver(name)
+{
+    return await remove("drivers", {name: name});
+}
+
+async function remove(collection, query)
+{
+    connectDB((db) => await db.db(dbName).collection(collection).deleteOne(query));
+}
 
 async function insert(collection, containsQuery, value)
 {
@@ -14,7 +67,7 @@ async function insert(collection, containsQuery, value)
     return await MongoClient.connect(url).then(async (val) =>
     {
         db = val;
-        return await contains(collection, containsQuery)
+        return await contains(collection, containsQuery);
     }).then(async (val) =>
     {
         if(val) throw new Error(collection + " already contains entry");
