@@ -25,10 +25,13 @@ before((done) =>
 
 after(() =>
 {
-    testdb.db(dbName).dropDatabase().then(() => 
+    if (testdb)
     {
-        //if(testdb) return testdb.close();
-    });
+		testdb.db(dbName).dropDatabase().then(() =>
+		{
+			//if(testdb) return testdb.close();
+		});
+    }
 });
 
 describe("insertLocation()", () =>

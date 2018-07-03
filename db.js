@@ -40,7 +40,7 @@ async function connectDB(callback)
 
 async function update(collection, identifierQuery, updateQuery)
 {
-    connectDB((db) =>
+    connectDB(async (db) =>
     {
         return await db.db(dbName).collection(collection).updateOne(identifierQuery, updateQuery);
     });
@@ -58,7 +58,7 @@ async function removeDriver(name)
 
 async function remove(collection, query)
 {
-    connectDB((db) => await db.db(dbName).collection(collection).deleteOne(query));
+    connectDB(async (db) => await db.db(dbName).collection(collection).deleteOne(query));
 }
 
 async function insert(collection, containsQuery, value)
