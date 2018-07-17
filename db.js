@@ -8,18 +8,62 @@ const dbName = "recur_db"; // "test_db" or "recur_db"
 const url = "mongodb://localhost:27017/" + dbName;
 const locationTypes = ["Yard", "Port", "Rail"];
 
-/*class Collection
+class Collection
 {
-    constructor(validateFields)
+    constructor(collectionName, insert = () => {throw new Error("Insertion not supported for " + collectionName)}, update = (() => {throw new Error("Update not supported for " + collectionName)}), remove = (() => {throw new Error("Remove not supported for " + collectionName)}))
     {
-        this.validateFields = validateFields;
+        this.collectionName = collectionName;
+        this.insert = insert;
+        this.update = update;
+        this.remove = remove;
     }
+}
 
-    validate(fields)
+const drivers = {
+    insert: async (name, availableDays, avoidLocations) =>
     {
-        fields.
+        return await insert("drivers", null, {name : name, availableDays : availableDays, avoidLocations : avoidLocations});
+    },
+    update: async (name, query) =>
+    {
+        return await update("drivers", {name: name}, query);
+    },
+    remove: async (name) =>
+    {
+        return await remove("drivers", {name: name});
     }
-}*/
+}
+
+const locations = {
+    insert: async (name, address, type = "Yard", openingTime = null, closingTime = null, requiresBooking = false) =>
+    {
+        // To do: Check if address is valid for Google Maps API
+        if(!locationTypes.includes(type)) throw new Error("Location type not valid");
+        openingTime = util.parseTimeOfDay(openingTime);
+        closingTime = util.parseTimeOfDay(closingTime);
+        if(typeof(requiresBooking) != "boolean") throw new Error("Booking requirement invalid");
+    
+        let containsQuery = {$or: [{ name: name }, { address: address }]};
+        let entry = {
+            name : name, 
+            address : address, 
+            type : type, 
+            openingTime : openingTime, 
+            closingTime : closingTime, 
+            requiresBooking : requiresBooking
+        }
+    
+        return await insert("locations", containsQuery, entry).then((res) => res);
+    },
+    update: async (name, query) =>
+    {
+        return await update("locations", {name: name}, query);
+    },
+    remove: async (name) =>
+    {
+        return await remove("locations", {name: name});
+    }
+}
 
 async function connectDB(callback)
 {
