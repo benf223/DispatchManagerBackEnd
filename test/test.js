@@ -1,15 +1,14 @@
 var sample = require('../test');
 var expect = require('chai').expect;
+var journeyEstimator = require("../journeyEstimator");
 
-describe('sample()', function () {
-	it('should add two numbers', function ()
+describe("getTravelTime()", () =>
+{
+	it("should return an estimated time between two inputted destinations", () =>
 	{
-		var x = 3;
-		var y = 3;
-		var sum = x + y;
-
-		var sum2 = sample(x, y);
-
-		expect(sum2).to.be.equal(sum);
+		journeyEstimator.getTravelTime("55 Wellesley St").then((travelTime) =>
+		{
+			expect(travelTime).to.be.a("number").and.be.greaterThan(30);
+		});
 	});
-})
+});
