@@ -1,6 +1,8 @@
 /**
  * Author: Neil Read
  */
+
+// tests need to be updated for the new way the db.js file is formatted
 const db = require('../db');
 const expect = require('chai').expect;
 const MongoClient = require("mongodb").MongoClient;
