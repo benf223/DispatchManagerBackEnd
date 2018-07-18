@@ -8,7 +8,7 @@ const APIKey = "AIzaSyDYgin8E87FEiZnPpzvQ6vqdPYpuEacKwI";
  * 
  * @param {string} text: time text returned from distance matrix API call, in the form 'x min(s)' or 'x hour(s) y min(s)
  */
-function hourMinutesToMinutes(text)
+function timeTextToMinutes(text)
 {
     try
     {
@@ -46,20 +46,36 @@ function hourMinutesToMinutes(text)
  */
 async function getTravelTime(source, destination, departDate)
 {
+    if(!source || !destination || !departDate)
+    {
+        throw new Error("Source, destination and departure date must be specified");
+    }
+
     return await request.get("https://maps.googleapis.com/maps/api/distancematrix/json?origins=" + source + "&destinations=" + destination + "&departure_time=" + (departDate.getTime() / 1000) + "&key=" + APIKey).then((body) =>
     {
-        //console.log(body);
-        body = JSON.parse(body);
-        if(body.status != "OK")
-        {
-            throw new Error(body.error_message);
-        }
-        else if(body.rows[0].elements[0].status == "NOT_FOUND")
-        {
-            throw new Error("Address not found");
-        }
+        let res = JSON.parse(body);
 
-        return hourMinutesToMinutes(body.rows[0].elements[0].duration_in_traffic.text) + travelOverheadTime;
+        switch(res.status)
+        {
+            case "OK":
+                if(res.origin_addresses[0] == "")
+                {
+                    throw new Error("Invalid source address");
+                }
+                else if(res.destination_addresses[0] == "")
+                {
+                    throw new Error("Invalid destination address");
+                }
+
+                return timeTextToMinutes(res.rows[0].elements[0].duration.text) + travelOverheadTime;
+            case "INVALID_REQUEST":
+                if(res.error_message == "departure_time is in the past. Traffic information is only available for future and current times.")
+                {
+                    throw new Error("Date cannot be in the past");
+                }
+            default:
+                throw new Error(res.error_message);
+        }
     });
 }
 
