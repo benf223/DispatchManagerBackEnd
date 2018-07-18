@@ -16,7 +16,7 @@ function hourMinutesToMinutes(text)
         let minutes = Number.NaN;
         if(words.length == 2)
         {
-            minutes = Number.parseInt(words[1]);
+            minutes = Number.parseInt(words[0]);
         }
         else if(words.length == 4)
         {
@@ -48,7 +48,18 @@ async function getTravelTime(source, destination, departDate)
 {
     return await request.get("https://maps.googleapis.com/maps/api/distancematrix/json?origins=" + source + "&destinations=" + destination + "&departure_time=" + (departDate.getTime() / 1000) + "&key=" + APIKey).then((body) =>
     {
-        return hourMinutesToMinutes(JSON.parse(body).rows[0].elements[0].duration.text) + travelOverheadTime;
+        //console.log(body);
+        body = JSON.parse(body);
+        if(body.status != "OK")
+        {
+            throw new Error(body.error_message);
+        }
+        else if(body.rows[0].elements[0].status == "NOT_FOUND")
+        {
+            throw new Error("Address not found");
+        }
+
+        return hourMinutesToMinutes(body.rows[0].elements[0].duration_in_traffic.text) + travelOverheadTime;
     });
 }
 
@@ -83,6 +94,8 @@ async function validateAddress(address)
 }
 
 module.exports = {
+    travelOverheadTime,
     getTravelTime,
-    createDate
+    createDate,
+    validateAddress
 }
