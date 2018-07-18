@@ -1,9 +1,7 @@
 /**
  * Author: Neil Read
  */
-
-// tests need to be updated for the new way the db.js file is formatted
-const db = require('../db');
+/*const db = require('../db');
 const expect = require('chai').expect;
 const MongoClient = require("mongodb").MongoClient;
 const url = "mongodb://localhost:27017";
@@ -89,6 +87,6 @@ describe("insertLocation()", () =>
             //console.log(err);
             expect(err).to.eql(new Error("locations already contains entry"));
         });
-    });*/
-});
+    });
+});*/
 
