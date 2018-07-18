@@ -18,20 +18,12 @@ app.get('/test', (req, res) => {
 	res.json(tmp);
 });
 
-// app.get('/planning', (res, req) => {
-// 	res.send('hello there');
-// });
-//
-// app.get('/planning/:date', (res, req) => {
-// 	res.send('general kenobi');
-// });
-
-app.get('/api/rounds/:date', (res, req) => {
-	res.send(dbHelper.getRounds(req.day));
+app.get('/api/rounds/:date', (req, res) => {
+	res.send(dbHelper.getRounds(null));
 });
 
-app.get('/api/releases/:date', (res, req) => {
-	res.send(dbHelper.getReleases(req.day));
+app.get('/api/releases/:date', (req, res) => {
+	res.send(dbHelper.getReleases(null));
 })
 
 app.listen(62176);
