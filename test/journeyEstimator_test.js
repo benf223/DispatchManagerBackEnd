@@ -2,11 +2,8 @@
  * Author: Neil Read
  */
 var chai = require("chai");
-var chaiAsPromised = require("chai-as-promised");
 
-chai.use(chaiAsPromised);
-
-// Then either:
+chai.use(require("chai-as-promised"));
 const je = require('../journeyEstimator');
 const expect = chai.expect;
 var tomorrow;
@@ -31,7 +28,6 @@ describe("getTravelTime()", () =>
 
     it("should throw an error if an address is invalid", () =>
     {
-        let expectedError = "Invalid address passed";
         return expect(je.getTravelTime("Invalid", "90 Akoranga Dr, Northcote", tomorrow)).to.eventually.be.rejectedWith("Invalid source address").then(() =>
         {
             return expect(je.getTravelTime("55 Wellesley St, Auckland", "Invalid", tomorrow)).to.eventually.be.rejectedWith("Invalid destination address");
@@ -53,5 +49,24 @@ describe("getTravelTime()", () =>
     it("should throw an error if the departure date is in the past", () =>
     {
         return expect(je.getTravelTime("55 Wellesley St, Auckland", "90 Akoranga Dr, Northcote", yesterday)).to.eventually.be.rejectedWith("Date cannot be in the past");
+    });
+});
+
+describe("validateAddress()", () =>
+{
+    it("should return true if the address is tracked by the distance matrix API", () =>
+    {
+        return expect(je.validateAddress("55 Wellesley St, Auckland")).to.eventually.be.true;
+    });
+
+    it("should return false if the address is not tracked by the distance matrix API", () =>
+    {
+        return expect(je.validateAddress("Invalid")).to.eventually.be.false.then(() =>
+        {
+           return expect(je.validateAddress(27)).to.eventually.be.false; 
+        }).then(() =>
+        {
+            return expect(je.validateAddress()).to.eventually.be.false;
+        });
     });
 });
