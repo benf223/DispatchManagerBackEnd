@@ -82,12 +82,27 @@ async function connectDB(callback)
     });
 }
 
+async function updateDriver(name, updateQuery)
+{
+    update()
+}
+
 async function update(collection, identifierQuery, updateQuery)
 {
     connectDB((db) =>
     {
         return await db.db(dbName).collection(collection).updateOne(identifierQuery, updateQuery);
     });
+}
+
+async function removeRelease(number)
+{
+
+}
+
+async function removeTruck(name)
+{
+
 }
 
 async function removeLocation(name)
@@ -125,6 +140,16 @@ async function insert(collection, containsQuery, value)
         if(db) db.close();
         throw err;
     });
+}
+
+async function insertRelease(number, truck, containerType, quantity)
+{
+
+}
+
+async function insertTruck(name, type)
+{
+
 }
 
 /**
