@@ -1,37 +1,25 @@
 /**
  * Author: Neil Read
  */
-/*const db = require('../db');
-const expect = require('chai').expect;
+const chai = require("chai");
+chai.use(require("chai-as-promised"));
+
+const db = require('../db');
+const expect = chai.expect;
 const MongoClient = require("mongodb").MongoClient;
 const url = "mongodb://localhost:27017";
 const dbName = "test_db";
 
 let testdb = null;
 
-before((done) =>
+if(db.dbName == "recur_db")
 {
-    if(db.dbName == "recur_db")
-    {
-        throw new Error("tests set to alter operational database 'recur_db'");
-    }
+    throw new Error("tests set to alter operational database 'recur_db'");
+}
 
-    MongoClient.connect(url).then((val) => 
-    {
-        testdb = val;
-        done();
-    });
-});
-
-after(() =>
+MongoClient.connect(url).then((val) => 
 {
-    if (testdb)
-    {
-		testdb.db(dbName).dropDatabase().then(() =>
-		{
-			//if(testdb) return testdb.close();
-		});
-    }
+    testdb = val;
 });
 
 describe("insertLocation()", () =>
@@ -54,24 +42,26 @@ describe("insertLocation()", () =>
         requiresBooking: false
     };
 
-    beforeEach(() =>
+    /*beforeEach(() =>
     {
         testdb.db(dbName).collection("locations").remove({});
-    });
+    });*/
 
     it("should insert a given location into the 'locations' collection", () =>
     {
-        return db.insertLocation(entry1.name, entry1.address, entry1.type, entry1.openingTime, entry1.closingTime, entry1.requiresBooking).then((val) =>
+        return db.insertLocation(entry1.name, entry1.address, entry1.type, entry1.openingTime, entry1.closingTime, entry1.requiresBooking).then(() =>
         {
+            console.log("what?");
+            //return expect(JSON.stringify(testdb.db(dbName).collection("locations").findOne({}, { projection :{ _id: false }}))).to.eventually.eql(JSON.stringify(entry1));
             return testdb.db(dbName).collection("locations").findOne({}, { projection :{ _id: false }});
-        }).then((docs) =>
+        }).then((val) =>
         {
-            console.log(docs);
-            //expect.fail(null, null, "Success unexpected");
-            expect(docs).to.eql(entry1);
-            console.log("done");
-            Promise.resolve();
-        }).catch();
+            console.log(val);
+            console.log(entry1);
+            console.log(JSON.parse(val) == entry1);
+
+            expect(JSON.stringify(val)).to.eql(JSON.stringify(entry1));
+        });
     });
 
     /*it("should throw an error if the location has the same name as another entry", () =>
@@ -87,6 +77,12 @@ describe("insertLocation()", () =>
             //console.log(err);
             expect(err).to.eql(new Error("locations already contains entry"));
         });
-    });
-});*/
+    });*/
+});
+
+testdb.db(dbName).dropDatabase().then(() => 
+{
+    console.log("bye");
+    if(testdb) return testdb.close();
+});
 

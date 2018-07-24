@@ -4,7 +4,7 @@
 
 const MongoClient = require("mongodb").MongoClient;
 const util = require("./util");
-const dbName = "recur_db"; // "test_db" or "recur_db"
+const dbName = "test_db"; // "test_db" or "recur_db"
 const url = "mongodb://localhost:27017/" + dbName;
 const locationTypes = ["Yard", "Port", "Rail"];
 
@@ -57,11 +57,41 @@ const locations = {
     },
     update: async (name, query) =>
     {
-        return await update("locations", {name: name}, query);
+        return await update("locations", {name: name}, query);        
     },
     remove: async (name) =>
     {
         return await remove("locations", {name: name});
+    }
+}
+
+const trucks = {
+    insert: async (name) =>
+    {
+        return await insert("trucks", null, {name : name});
+    },
+    update: async (name, query) =>
+    {
+        return await update("trucks", {name: name}, query);
+    },
+    remove: async (name) =>
+    {
+        return await remove("trucks", {name: name});
+    }
+}
+
+const releases = {
+    insert: async (name) =>
+    {
+        return await insert("releases", null, {name : name});
+    },
+    update: async (name, query) =>
+    {
+        return await update("releases", {name: name}, query);
+    },
+    remove: async (name) =>
+    {
+        return await remove("releases", {name: name});
     }
 }
 
@@ -89,7 +119,7 @@ async function updateDriver(name, updateQuery)
 
 async function update(collection, identifierQuery, updateQuery)
 {
-    connectDB((db) =>
+    connectDB(async (db) =>
     {
         return await db.db(dbName).collection(collection).updateOne(identifierQuery, updateQuery);
     });
@@ -117,7 +147,7 @@ async function removeDriver(name)
 
 async function remove(collection, query)
 {
-    connectDB((db) => await db.db(dbName).collection(collection).deleteOne(query));
+    connectDB(async (db) => await db.db(dbName).collection(collection).deleteOne(query));
 }
 
 async function insert(collection, containsQuery, value)
