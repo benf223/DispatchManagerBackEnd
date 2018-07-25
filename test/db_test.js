@@ -1,16 +1,11 @@
 /**
  * Author: Neil Read
  */
-<<<<<<< HEAD
-/*const db = require('../db');
-const expect = require('chai').expect;
-=======
 const chai = require("chai");
 chai.use(require("chai-as-promised"));
 
 const db = require('../db');
 const expect = chai.expect;
->>>>>>> neil
 const MongoClient = require("mongodb").MongoClient;
 const url = "mongodb://localhost:27017";
 const dbName = "test_db";
@@ -29,20 +24,10 @@ before(function ()
 
 after(function()
 {
-<<<<<<< HEAD
-    if (testdb)
-    {
-		testdb.db(dbName).dropDatabase().then(() =>
-		{
-			//if(testdb) return testdb.close();
-		});
-    }
-=======
     return testdb.db(dbName).dropDatabase().then(function()
     {
         if(testdb) testdb.close();
     });
->>>>>>> neil
 });
 
 describe("locations.insert()", function()
@@ -98,10 +83,6 @@ describe("locations.insert()", function()
             return expect(db.insertLocation(entry2.name, entry1.address, entry2.type, entry2.openingTime, entry2.closingTime, entry2.requiresBooking)).to.eventually.be.rejectedWith("locations already contains entry");
         });
     });
-<<<<<<< HEAD
-});*/
-=======
->>>>>>> neil
 
     it("should throw an error if the location has an address not tracked by the Distance Matrix API", function()
     {
