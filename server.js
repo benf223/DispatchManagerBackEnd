@@ -26,4 +26,9 @@ app.get('/api/releases/:date', (req, res) => {
 	res.send(dbHelper.getReleases(null));
 })
 
+app.get('/api/full_releases/:data', (req, res) => {
+	let params = req.params.data.split('@');
+	res.send(dbHelper.getFullRelease(params[0], params[1]));
+})
+
 app.listen(62176);
