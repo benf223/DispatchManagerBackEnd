@@ -12,18 +12,33 @@ const dbName = "test_db";
 
 let testdb = null;
 
-if(db.dbName == "recur_db")
+before(function ()
 {
-    throw new Error("tests set to alter operational database 'recur_db'");
-}
+    if(db.dbName == "recur_db")
+    {
+        throw new Error("tests set to alter operational database 'recur_db'");
+    }
 
-MongoClient.connect(url).then((val) => 
-{
-    testdb = val;
+    return MongoClient.connect(url).then((val) => {testdb = val});
 });
 
-describe("insertLocation()", () =>
+after(function()
 {
+    return testdb.db(dbName).dropDatabase().then(function()
+    {
+        if(testdb) testdb.close();
+    });
+});
+
+describe("insertLocation()", function()
+{
+    this.timeout(10000);
+
+    beforeEach(function()
+    {
+        testdb.db(dbName).collection("locations").remove({});
+    });
+
     const entry1 = {
         name: "Place",
         address: "123 Random Street",
@@ -42,47 +57,23 @@ describe("insertLocation()", () =>
         requiresBooking: false
     };
 
-    /*beforeEach(() =>
-    {
-        testdb.db(dbName).collection("locations").remove({});
-    });*/
-
     it("should insert a given location into the 'locations' collection", () =>
     {
         return db.insertLocation(entry1.name, entry1.address, entry1.type, entry1.openingTime, entry1.closingTime, entry1.requiresBooking).then(() =>
-        {
-            console.log("what?");
-            //return expect(JSON.stringify(testdb.db(dbName).collection("locations").findOne({}, { projection :{ _id: false }}))).to.eventually.eql(JSON.stringify(entry1));
+        {            
             return testdb.db(dbName).collection("locations").findOne({}, { projection :{ _id: false }});
         }).then((val) =>
         {
-            console.log(val);
-            console.log(entry1);
-            console.log(JSON.parse(val) == entry1);
-
-            expect(JSON.stringify(val)).to.eql(JSON.stringify(entry1));
+            return expect(JSON.stringify(val)).to.eql(JSON.stringify(entry1));
         });
     });
 
-    /*it("should throw an error if the location has the same name as another entry", () =>
+    it("should throw an error if the location has the same name as another entry", function()
     {
-        db.insertLocation(entry1.name, entry1.address, entry1.type, entry1.openingTime, entry1.closingTime, entry1.requiresBooking).then(() =>
+        return db.insertLocation(entry1.name, entry1.address, entry1.type, entry1.openingTime, entry1.closingTime, entry1.requiresBooking).then(() =>
         {
-            return db.insertLocation(entry1.name, entry2.address, entry2.type, entry2.openingTime, entry2.closingTime, entry2.requiresBooking);
-        }).then(() =>
-        {
-            expect.fail(null, null, "Success unexpected");
-        }).catch((err) => 
-        {
-            //console.log(err);
-            expect(err).to.eql(new Error("locations already contains entry"));
+            console.log("hello");
+            return expect(db.insertLocation(entry1.name, entry2.address, entry2.type, entry2.openingTime, entry2.closingTime, entry2.requiresBooking)).to.eventually.throw("should throw an error if the location has the same name as another entry");
         });
-    });*/
+    });
 });
-
-testdb.db(dbName).dropDatabase().then(() => 
-{
-    console.log("bye");
-    if(testdb) return testdb.close();
-});
-

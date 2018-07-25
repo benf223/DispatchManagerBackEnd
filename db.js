@@ -213,6 +213,12 @@ async function queryDB(collection, query)
     });
 }
 
+/**
+ * Returns true if the associated element is in the collection
+ * 
+ * @param {string} collection: Name of the collection to be checked
+ * @param {Object} query: Query to match with elements in the collection
+ */
 async function contains(collection, query)
 {
     return await queryDB(collection, query).then((docs) => docs.length > 0);
