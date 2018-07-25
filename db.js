@@ -4,74 +4,33 @@
 
 const MongoClient = require("mongodb").MongoClient;
 const util = require("./util");
-const dbName = "test_db"; // "test_db" or "recur_db"
+const dbName = "recur_db"; // "test_db" or "recur_db"
 const url = "mongodb://localhost:27017/" + dbName;
-const locationTypes = ["Yard", "Port", "Rail"];
+const je = require("./journeyEstimator");
+const DB_NAME = "test_db"; // "test_db" or "recur_db"
+const URL = "mongodb://localhost:27017/" + DB_NAME;
+const CONTAINER_TYPES = ["20ft", "40ft"];
 
+/*class Collection
 class Collection
 {
+    constructor(validateFields)
     constructor(collectionName, insert = () => {throw new Error("Insertion not supported for " + collectionName)}, update = (() => {throw new Error("Update not supported for " + collectionName)}), remove = (() => {throw new Error("Remove not supported for " + collectionName)}))
     {
+        this.validateFields = validateFields;
         this.collectionName = collectionName;
         this.insert = insert;
         this.update = update;
         this.remove = remove;
     }
-}
 
-const drivers = {
-    insert: async (name, availableDays, avoidLocations) =>
-    {
         return await insert("drivers", null, {name : name, availableDays : availableDays, avoidLocations : avoidLocations});
     },
-    update: async (name, query) =>
-    {
-        return await update("drivers", {name: name}, query);
     },
-    remove: async (name) =>
     {
         return await remove("drivers", {name: name});
-    }
-}
-
-const locations = {
-    insert: async (name, address, type = "Yard", openingTime = null, closingTime = null, requiresBooking = false) =>
-    {
-        // To do: Check if address is valid for Google Maps API
-        if(!locationTypes.includes(type)) throw new Error("Location type not valid");
-        openingTime = util.parseTimeOfDay(openingTime);
-        closingTime = util.parseTimeOfDay(closingTime);
-        if(typeof(requiresBooking) != "boolean") throw new Error("Booking requirement invalid");
-    
-        let containsQuery = {$or: [{ name: name }, { address: address }]};
-        let entry = {
-            name : name, 
-            address : address, 
-            type : type, 
-            openingTime : openingTime, 
-            closingTime : closingTime, 
-            requiresBooking : requiresBooking
-        }
-    
-        return await insert("locations", containsQuery, entry).then((res) => res);
-    },
-    update: async (name, query) =>
-    {
-        return await update("locations", {name: name}, query);        
-    },
     remove: async (name) =>
-    {
-        return await remove("locations", {name: name});
     }
-}
-
-const trucks = {
-    insert: async (name) =>
-    {
-        return await insert("trucks", null, {name : name});
-    },
-    update: async (name, query) =>
-    {
         return await update("trucks", {name: name}, query);
     },
     remove: async (name) =>
@@ -81,9 +40,20 @@ const trucks = {
 }
 
 const releases = {
-    insert: async (name) =>
+    // To do: Find out format of release number
+    insert: async (number, client, containerType, quantity, acceptanceDate, cutoffDate, from, to) =>
     {
-        return await insert("releases", null, {name : name});
+        let entry = {
+            number: number,
+            client: client,
+            containerType: containerType,
+            quantity: quantity,
+            acceptanceDate: acceptanceDate,
+            cutoffDate: cutoffDate,
+            from: from,
+            to: to
+        }
+        return await insert("releases", {number: number}, {name : name});
     },
     update: async (name, query) =>
     {
@@ -98,7 +68,7 @@ const releases = {
 async function connectDB(callback)
 {
     let db = null;
-    return await MongoClient.connect(url).then(async (val) =>
+    return await MongoClient.connect(URL).then(async (val) =>
     {
         db = val;
         return await callback(db);
@@ -112,55 +82,30 @@ async function connectDB(callback)
     });
 }
 
-async function updateDriver(name, updateQuery)
-{
-    update()
-}
-
 async function update(collection, identifierQuery, updateQuery)
 {
     connectDB(async (db) =>
     {
-        return await db.db(dbName).collection(collection).updateOne(identifierQuery, updateQuery);
+        return await db.db(DB_NAME).collection(collection).updateOne(identifierQuery, updateQuery);
     });
-}
-
-async function removeRelease(number)
-{
-
-}
-
-async function removeTruck(name)
-{
-
-}
-
-async function removeLocation(name)
-{
-    return await remove("locations", {name: name});
-}
-
-async function removeDriver(name)
-{
-    return await remove("drivers", {name: name});
 }
 
 async function remove(collection, query)
 {
-    connectDB(async (db) => await db.db(dbName).collection(collection).deleteOne(query));
+    connectDB(async (db) => await db.db(DB_NAME).collection(collection).deleteOne(query));
 }
 
 async function insert(collection, containsQuery, value)
 {
     let db = null;
-    return await MongoClient.connect(url).then(async (val) =>
+    return await MongoClient.connect(URL).then(async (val) =>
     {
         db = val;
         return await contains(collection, containsQuery);
     }).then(async (val) =>
     {
         if(val) throw new Error(collection + " already contains entry");
-        return await db.db(dbName).collection(collection).insertOne(value);
+        return await db.db(DB_NAME).collection(collection).insertOne(value);
     }).then(async (val) =>
     {
         db.close();
@@ -172,57 +117,6 @@ async function insert(collection, containsQuery, value)
     });
 }
 
-async function insertRelease(number, truck, containerType, quantity)
-{
-
-}
-
-async function insertTruck(name, type)
-{
-
-}
-
-/**
- * 
- * @param {string} name 
- * @param {string} address 
- * @param {string} type - type of location out of 'Yard', 'Port' and 'Rail'
- * @param {string} openingTime - 24 hour format hh:mm
- * @param {string} closingTime - 24 hour format hh:mm
- * @param {boolean} requiresBooking 
- */
-async function insertLocation(name, address, type = "Yard", openingTime = null, closingTime = null, requiresBooking = false)
-{
-    // To do: Check if address is valid for Google Maps API
-    if(!locationTypes.includes(type)) throw new Error("Location type not valid");
-    openingTime = util.parseTimeOfDay(openingTime);
-    closingTime = util.parseTimeOfDay(closingTime);
-    if(typeof(requiresBooking) != "boolean") throw new Error("Booking requirement invalid");
-
-    let containsQuery = {$or: [{ name: name }, { address: address }]};
-    let entry = {
-        name : name, 
-        address : address, 
-        type : type, 
-        openingTime : openingTime, 
-        closingTime : closingTime, 
-        requiresBooking : requiresBooking
-    }
-
-    return await insert("locations", containsQuery, entry).then((res) => res);
-}
-
-/**
- * 
- * @param {string} name 
- * @param {*} availableDays 
- * @param {*} avoidLocations 
- */
-async function insertDriver(name, availableDays, avoidLocations)
-{
-    return await insert("drivers", null, {name : name, availableDays : availableDays, avoidLocations : avoidLocations}).then((res) => res);
-}
-
 /**
  * 
  * @param {string} collection - Name of collection to search
@@ -230,9 +124,9 @@ async function insertDriver(name, availableDays, avoidLocations)
  */
 async function queryDB(collection, query)
 {
-    return await MongoClient.connect(url).then(async (db) =>
+    return await MongoClient.connect(URL).then(async (db) =>
     {
-        var docs = await db.db(dbName).collection(collection).find(query).toArray();
+        var docs = await db.db(DB_NAME).collection(collection).find(query).toArray();
         db.close();
         return docs;
     });
@@ -250,7 +144,9 @@ async function contains(collection, query)
 }
 
 module.exports = {
-    insertDriver,
-    insertLocation,
-    dbName
+    drivers,
+    locations,
+    releases,
+    DB_NAME,
+    LOCATION_TYPES
 }
