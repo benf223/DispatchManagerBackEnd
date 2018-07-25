@@ -80,20 +80,6 @@ async function getTravelTime(source, destination, departDate)
 }
 
 /**
- * Returns a date object with corresponding parameters used to set departure time in distance matrix API
- * 
- * @param {number} day
- * @param {number} month 
- * @param {number} year 
- * @param {number} hour: Expressed in military time i.e. 0-23
- * @param {number} minutes 
- */
-function createDate(day, month, year, hour, minutes)
-{
-    return new Date(year + "-" + month + "-" + day + " " + hour + ":" + minutes + ":00");
-}
-
-/**
  * Returns true if the passed address can be found by the Distance Matrix API
  * 
  * @param {string} address
@@ -112,6 +98,5 @@ async function validateAddress(address)
 module.exports = {
     travelOverheadTime,
     getTravelTime,
-    createDate,
     validateAddress
 }

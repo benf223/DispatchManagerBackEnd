@@ -5,6 +5,7 @@ var chai = require("chai");
 
 chai.use(require("chai-as-promised"));
 const je = require('../journeyEstimator');
+const util = require("../util");
 const expect = chai.expect;
 var tomorrow;
 var yesterday;
@@ -12,8 +13,8 @@ var yesterday;
 before(() =>
 {
     let date = new Date();
-    tomorrow = je.createDate(date.getDate() + 1, date.getMonth() + 1, date.getFullYear(), date.getHours(), date.getMinutes());
-    yesterday = je.createDate(date.getDate() - 1, date.getMonth() + 1, date.getFullYear(), date.getHours(), date.getMinutes());
+    tomorrow = util.createDate(date.getDate() + 1, date.getMonth() + 1, date.getFullYear(), date.getHours(), date.getMinutes());
+    yesterday = util.createDate(date.getDate() - 1, date.getMonth() + 1, date.getFullYear(), date.getHours(), date.getMinutes());
 });
 
 describe("getTravelTime()", () =>
