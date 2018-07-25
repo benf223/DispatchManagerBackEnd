@@ -30,7 +30,7 @@ after(function()
     });
 });
 
-describe("insertLocation()", function()
+describe("locations.insert()", function()
 {
     this.timeout(10000);
 
@@ -72,8 +72,20 @@ describe("insertLocation()", function()
     {
         return db.insertLocation(entry1.name, entry1.address, entry1.type, entry1.openingTime, entry1.closingTime, entry1.requiresBooking).then(() =>
         {
-            console.log("hello");
-            return expect(db.insertLocation(entry1.name, entry2.address, entry2.type, entry2.openingTime, entry2.closingTime, entry2.requiresBooking)).to.eventually.throw("should throw an error if the location has the same name as another entry");
+            return expect(db.insertLocation(entry1.name, entry2.address, entry2.type, entry2.openingTime, entry2.closingTime, entry2.requiresBooking)).to.eventually.be.rejectedWith("locations already contains entry");
         });
+    });
+
+    it("should throw an error if the location has the same address as another entry", function()
+    {
+        return db.insertLocation(entry1.name, entry1.address, entry1.type, entry1.openingTime, entry1.closingTime, entry1.requiresBooking).then(() =>
+        {
+            return expect(db.insertLocation(entry2.name, entry1.address, entry2.type, entry2.openingTime, entry2.closingTime, entry2.requiresBooking)).to.eventually.be.rejectedWith("locations already contains entry");
+        });
+    });
+
+    it("should throw an error if the location has an address not tracked by the Distance Matrix API", function()
+    {
+        return expect(db.insertLocation(entry1.name, "Fake Address", entry1.type, entry1.openingTime, entry1.closingTime, entry1.requiresBooking)).to.eventually.be.rejectedWith("Invalid Address");
     });
 });
