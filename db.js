@@ -1,36 +1,99 @@
 /**
  * Author: Neil Read
+ * 
+ * Interface enabling access and manipulation of database.
+ * 
+ * Database actions include find() insert(), update() or remove() for each collection
+ * e.g. locations.insert(), releases.remove()
  */
 
 const MongoClient = require("mongodb").MongoClient;
 const util = require("./util");
-const dbName = "recur_db"; // "test_db" or "recur_db"
-const url = "mongodb://localhost:27017/" + dbName;
 const je = require("./journeyEstimator");
 const DB_NAME = "test_db"; // "test_db" or "recur_db"
 const URL = "mongodb://localhost:27017/" + DB_NAME;
+const LOCATION_TYPES = ["Yard", "Port", "Rail"];
 const CONTAINER_TYPES = ["20ft", "40ft"];
 
-/*class Collection
-class Collection
-{
-    constructor(validateFields)
-    constructor(collectionName, insert = () => {throw new Error("Insertion not supported for " + collectionName)}, update = (() => {throw new Error("Update not supported for " + collectionName)}), remove = (() => {throw new Error("Remove not supported for " + collectionName)}))
+const drivers = {
+    insert: async (name, availableDays, avoidLocations) =>
     {
-        this.validateFields = validateFields;
-        this.collectionName = collectionName;
-        this.insert = insert;
-        this.update = update;
-        this.remove = remove;
-    }
-
         return await insert("drivers", null, {name : name, availableDays : availableDays, avoidLocations : avoidLocations});
     },
+    update: async (name, query) =>
+    {
+        return await update("drivers", {name: name}, query);
     },
+    remove: async (name) =>
     {
         return await remove("drivers", {name: name});
-    remove: async (name) =>
     }
+}
+
+const locations = {
+    insert: async (name, address, type = "Yard", openingTime = null, closingTime = null, requiresBooking = false) =>
+    {
+        // Check required arguments
+        if(!name) throw new Error("A name must be supplied");
+        if(!address) throw new Error("An address must be supplied");
+
+        // Validate address
+        if(!(await je.validateAddress(address))) throw new Error("Address not found");
+
+        // Validate location type
+        if(!LOCATION_TYPES.includes(type)) throw new Error("Location type '" + type + "' is not a valid type");
+
+        try
+        {
+            openingTime = util.parseTimeOfDay(openingTime);
+        }
+        catch(err)
+        {
+            throw new Error("Invalid opening time: " + err.message);
+        }
+
+        try
+        {
+            closingTime = util.parseTimeOfDay(closingTime);
+        }
+        catch(err)
+        {
+            throw new Error("Invalid closing time: " + err.message);
+        }
+
+        if(!util.timeOfDayIsBefore(openingTime, closingTime)) throw new Error("Opening time must be before closing time");
+
+        requiresBooking = requiresBooking ? true : false;
+    
+        let containsQuery = {$or: [{ name: name }, { address: address }]};
+        let entry = {
+            name : name, 
+            address : address, 
+            type : type, 
+            openingTime : openingTime, 
+            closingTime : closingTime, 
+            requiresBooking : requiresBooking
+        }
+    
+        return await insert("locations", containsQuery, entry);
+    },
+    update: async (name, query) =>
+    {
+        return await update("locations", {name: name}, query);        
+    },
+    remove: async (name) =>
+    {
+        return await remove("locations", {name: name});
+    }
+}
+
+const trucks = {
+    insert: async (name) =>
+    {
+        return await insert("trucks", null, {name : name});
+    },
+    update: async (name, query) =>
+    {
         return await update("trucks", {name: name}, query);
     },
     remove: async (name) =>
@@ -43,6 +106,30 @@ const releases = {
     // To do: Find out format of release number
     insert: async (number, client, containerType, quantity, acceptanceDate, cutoffDate, from, to) =>
     {
+        // Check required arguments
+        if(!number) throw new Error("A release number is required");
+        if(!client) throw new Error("A client is required");
+
+        // Check quantity is positive integer
+        if(!Number.isInteger(quantity) || quantity <= 0) throw new Error("Quantity '" + quantity + "' must be a positive integer");
+        
+        // Validate container type
+        if(!CONTAINER_TYPES.includes(containerType)) throw new Error("Container type '" + containerType + "' is not a valid type");
+        
+        // Validate dates
+        if(!(acceptanceDate instanceof Date)) throw new Error("'" + acceptanceDate + "' is not a valid date");
+        if(!(cutoffDate instanceof Date)) throw new Error("'" + cutoffDate + "' is not a valid date");
+        
+        // Check acceptance date is before cutoff
+        if(cutoffDate.getTime() <= acceptanceDate.getTime()) throw new Error("Cutoff '" + util.parseDateString(cutoffDate) + "' is before acceptance date '" + util.parseDateString(acceptanceDate) + "'");
+        
+        //Check addresses are different
+        if(from == to) throw new Error("Source and destination addresses are identical");
+        
+        // Check address are in database
+        if(!(await contains("locations", {name: from}))) throw new Error("Cannot find address '" + from + "'");
+        if(!(await contains("locations", {name: to}))) throw new Error("Cannot find address '" + to + "'");
+
         let entry = {
             number: number,
             client: client,
@@ -53,7 +140,7 @@ const releases = {
             from: from,
             to: to
         }
-        return await insert("releases", {number: number}, {name : name});
+        return await insert("releases", {number: number}, entry);
     },
     update: async (name, query) =>
     {
