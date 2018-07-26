@@ -46,13 +46,19 @@ function timeOfDayIsBefore(t1, t2)
  * @param {number} hour: Expressed in military time i.e. 0-23
  * @param {number} minutes 
  */
-function createDate(day, month, year, hour, minutes)
+function createDate(day, month, year, hour = 0, minutes = 0)
 {
     return new Date(year + "-" + month + "-" + day + " " + hour + ":" + minutes + ":00");
+}
+
+function parseDateString(date)
+{
+    return date.getDate() + "/" + (date.getMonth() + 1) + "/" + date.getFullYear();
 }
 
 module.exports = {
     parseTimeOfDay,
     timeOfDayIsBefore,
-    createDate
+    createDate,
+    parseDateString
 }
