@@ -259,5 +259,48 @@ describe("Database Collections", function()
                 });
             });
         });
+    describe("get()", function ()
+    {
+        before(function()
+        {
+            return db.locations.insert(lEntry1.name, lEntry1.address, lEntry1.type, lEntry1. openingTime, lEntry1.closingTime, lEntry1.requiresBooking).then(() =>
+            {
+                return db.locations.insert(lEntry2.name, lEntry2.address, lEntry2.type, lEntry2. openingTime, lEntry2.closingTime, lEntry2.requiresBooking);
+            })
+        });
+
+        it("should return a single entry corresponding to the passed name", function()
+        {
+            return db.locations.get(lEntry1.name).then((res) =>
+            {
+                return expect(JSON.stringify(res)).to.eql(JSON.stringify(lEntry1));
+            });
+        });
+
+        it("should throw an error if an entry cannot be found", function()
+        {
+            return expect(db.locations.get("Hello")).to.eventually.be.rejectedWith("No entry 'Hello' can be found");
+        });
+    });
+
+    describe("getAll()", function()
+    {
+        before(function()
+        {
+            return db.locations.insert(lEntry1.name, lEntry1.address, lEntry1.type, lEntry1. openingTime, lEntry1.closingTime, lEntry1.requiresBooking).then(() =>
+            {
+                return db.locations.insert(lEntry2.name, lEntry2.address, lEntry2.type, lEntry2. openingTime, lEntry2.closingTime, lEntry2.requiresBooking);
+            })
+        });
+
+        it("should return all entries in the database", function()
+        {
+            return db.locations.getAll(lEntry1.name).then((res) =>
+            {
+                expect(JSON.stringify(res[0])).to.eql(JSON.stringify(lEntry1));
+                return expect(JSON.stringify(res[1])).to.eql(JSON.stringify(lEntry2));
+            });
+        });
+    });
     });
 });

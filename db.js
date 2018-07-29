@@ -84,6 +84,10 @@ const locations = {
     remove: async (name) =>
     {
         return await remove("locations", {name: name});
+    },
+    find: async (name) =>
+    {
+        return null;
     }
 }
 
