@@ -85,9 +85,13 @@ const locations = {
     {
         return await remove("locations", {name: name});
     },
-    find: async (name) =>
+    get: async (name) =>
     {
-        return null;
+        return get("locations", {name: name});
+    },
+    getAll: async (name) =>
+    {
+        return getAll("locations");
     }
 }
 
@@ -170,6 +174,22 @@ async function connectDB(callback)
     {
         if(db) db.close();
         throw err;
+    });
+}
+
+async function get(collection, query)
+{
+    connectDB(async (db) =>
+    {
+        return await db.db(DB_NAME).collection(collection).findOne(query);
+    });
+}
+
+async function getAll(collection)
+{
+    connectDB(async (db) =>
+    {
+        return await db.db(DB_NAME).collection(collection).find({});
     });
 }
 
