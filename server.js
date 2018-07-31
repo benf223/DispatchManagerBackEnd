@@ -1,7 +1,7 @@
 var express = require('express');
 var app = express();
-var db = require('./db.js');
-var dbHelper = new db();
+var dbHelper = require('./db.js');
+// var dbHelper = new db();
 
 app.use((req, res, next) => {
 	res.header("Access-Control-Allow-Origin", "*");
@@ -19,16 +19,20 @@ app.get('/test', (req, res) => {
 });
 
 app.get('/api/rounds/:date', (req, res) => {
-	res.send(dbHelper.getRounds(null));
+	dbHelper.rounds.get(null).then((result) => {
+		res.send(result);
+	});
 });
 
 app.get('/api/releases/:date', (req, res) => {
-	res.send(dbHelper.getReleases(null));
+	dbHelper.releases.get(null).then((result) => {
+		res.send(result);
+	})
 })
 
-app.get('/api/full_releases/:data', (req, res) => {
-	let params = req.params.data.split('@');
-	res.send(dbHelper.getFullRelease(params[0], params[1]));
-})
+// app.get('/api/full_releases/:data', (req, res) => {
+// 	let params = req.params.data.split('@');
+// 	res.send(dbHelper.getFullRelease(params[0], params[1]));
+// })
 
 app.listen(process.env.PORT || 3000);
