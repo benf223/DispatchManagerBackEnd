@@ -4,7 +4,8 @@
   "description": "Back end for dispatch manager",
   "main": "server.js",
   "scripts": {
-    "test": "mocha"
+    "test": "mocha",
+    "start": "node server.js"
   },
   "repository": {
     "type": "git",
