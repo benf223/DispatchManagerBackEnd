@@ -31,4 +31,4 @@ app.get('/api/full_releases/:data', (req, res) => {
 	res.send(dbHelper.getFullRelease(params[0], params[1]));
 })
 
-app.listen(62176);
+app.listen(process.env.PORT || 3000);
