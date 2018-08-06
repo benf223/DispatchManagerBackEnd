@@ -1,7 +1,6 @@
 var express = require('express');
 var app = express();
-var db = require('./db.js');
-var dbHelper = new db();
+var dbHelper = require('./db.js');
 
 app.use((req, res, next) => {
 	res.header("Access-Control-Allow-Origin", "*");
@@ -9,26 +8,33 @@ app.use((req, res, next) => {
 	next();
 });
 
-var tmp = [
-	{ value: 'hello' },
-	{ value: 'test' }
-];
+// var tmp = [
+// 	{ value: 'hello' },
+// 	{ value: 'test' }
+// ];
 
+// Used to wake up the Heroku App
 app.get('/test', (req, res) => {
-	res.json(tmp);
+	// res.json(tmp);
 });
 
 app.get('/api/rounds/:date', (req, res) => {
-	res.send(dbHelper.getRounds(null));
+	dbHelper.rounds.get(null).then((result) => {
+		res.send(result);
+	});
 });
 
+// This needs to better process the data returned from the database so that it trims it to fit the smaller format.
 app.get('/api/releases/:date', (req, res) => {
-	res.send(dbHelper.getReleases(null));
-})
+	dbHelper.releases.get(null).then((result) => {
+		res.send(result);
+	})
+});
 
+// This needs to retrieve the whole release given the parameters
 app.get('/api/full_releases/:data', (req, res) => {
 	let params = req.params.data.split('@');
-	res.send(dbHelper.getFullRelease(params[0], params[1]));
+	res.send(dbHelper.releases.get('full'));
 })
 
-app.listen(62176);
+app.listen(process.env.PORT || 3000);
