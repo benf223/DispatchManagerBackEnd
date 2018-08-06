@@ -28,7 +28,7 @@ const drivers = {
     {
         return await remove("drivers", {name: name});
     }
-}
+};
 
 const locations = {
     insert: async (name, address, type = "Yard", openingTime = null, closingTime = null, requiresBooking = false) =>
@@ -93,7 +93,7 @@ const locations = {
     {
         return getAll("locations");
     }
-}
+};
 
 const trucks = {
     insert: async (name) =>
@@ -108,7 +108,7 @@ const trucks = {
     {
         return await remove("trucks", {name: name});
     }
-}
+};
 
 const releases = {
     // To do: Find out format of release number
@@ -192,6 +192,10 @@ const rounds = {
 	},
 	get: async (name) =>
 	{
+		if (name === 'full') {
+			return { colour: '#2FC066', release: release, qtyForty: 3, qtyTwenty: 20};
+		}
+
 		return {
 			rounds: [
 				{
