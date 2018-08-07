@@ -160,6 +160,10 @@ const releases = {
     },
 	get: async (name) =>
 	{
+		if (name === 'full') {
+			return { colour: '#2FC066', release: release, qtyForty: 3, qtyTwenty: 20};
+		}
+
 		return {
 			releases: [
 				{release: '1', qty: 2, size: 40, colour: '#FF0000'},
@@ -192,10 +196,6 @@ const rounds = {
 	},
 	get: async (name) =>
 	{
-		if (name === 'full') {
-			return { colour: '#2FC066', release: release, qtyForty: 3, qtyTwenty: 20};
-		}
-
 		return {
 			rounds: [
 				{
