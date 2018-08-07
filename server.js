@@ -34,7 +34,9 @@ app.get('/api/releases/:date', (req, res) => {
 // This needs to retrieve the whole release given the parameters
 app.get('/api/full_releases/:data', (req, res) => {
 	let params = req.params.data.split('@');
-	res.send(dbHelper.releases.get('full'));
+	dbHelper.releases.get('full').then((result) => {
+		res.send(result);
+	});
 })
 
 app.listen(process.env.PORT || 3000);
