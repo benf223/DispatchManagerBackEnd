@@ -20,7 +20,7 @@ var auth = express.Router();
 // ];
 
 // Used to wake up the Heroku App
-api.get('/test', (req, res) => {
+api.get('/start', (req, res) => {
 	// res.json(tmp);
 });
 
