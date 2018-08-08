@@ -14,14 +14,8 @@ app.use((req, res, next) => {
 var api = express.Router();
 var auth = express.Router();
 
-// var tmp = [
-// 	{ value: 'hello' },
-// 	{ value: 'test' }
-// ];
-
 // Used to wake up the Heroku App
 api.get('/start', (req, res) => {
-	// res.json(tmp);
 });
 
 api.get('/rounds/:date', (req, res) => {
@@ -34,7 +28,7 @@ api.get('/rounds/:date', (req, res) => {
 api.get('/releases/:date', (req, res) => {
 	dbHelper.releases.get(null).then((result) => {
 		res.send(result);
-	})
+	});
 });
 
 // This needs to retrieve the whole release given the parameters
@@ -46,7 +40,7 @@ api.get('/full_releases/:data', (req, res) => {
 auth.post('/test', (req, res) => {
 	console.log(req.body);
 	res.sendStatus(200);
-})
+});
 
 app.use('/api', api);
 app.use('/auth', auth);
