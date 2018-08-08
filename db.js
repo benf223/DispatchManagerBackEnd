@@ -10,10 +10,14 @@
 const MongoClient = require("mongodb").MongoClient;
 const util = require("./util");
 const je = require("./journeyEstimator");
-const DB_NAME = "test_db"; // "test_db" or "recur_db"
-const URL = "mongodb://localhost:27017/" + DB_NAME;
+const dbName = "recur_db"; // "test_db" or "recur_db"
+const PATH = "mongodb://localhost:27017/";
 const LOCATION_TYPES = ["Yard", "Port", "Rail"];
 const CONTAINER_TYPES = ["20ft", "40ft"];
+const TRUCK_TYPES = ["Tribox", "Skeletal"];
+
+var mongod = null;
+var db = null;
 
 const drivers = {
     insert: async (name, availableDays, avoidLocations) =>
@@ -89,16 +93,23 @@ const locations = {
     {
         return get("locations", {name: name});
     },
-    getAll: async (name) =>
+    getAll: async () =>
     {
         return getAll("locations");
     }
 }
 
 const trucks = {
-    insert: async (name) =>
+    insert: async (name, type) =>
     {
-        return await insert("trucks", null, {name : name});
+        console.log(name);
+        console.log(type);
+        if(!TRUCK_TYPES.includes(type)) throw new Error("Truck type '" + type + "' is not a valid type");
+        let entry = {
+            name: name,
+            type: type
+        }
+        return await insert("trucks", {name: name}, entry);
     },
     update: async (name, query) =>
     {
@@ -107,6 +118,15 @@ const trucks = {
     remove: async (name) =>
     {
         return await remove("trucks", {name: name});
+    },
+    get: async (name) =>
+    {
+        console.log(name);
+        return await get("trucks", {name: name});
+    },
+    getAll: async () =>
+    {
+        return await getAll("trucks");
     }
 }
 
@@ -157,74 +177,79 @@ const releases = {
     remove: async (name) =>
     {
         return await remove("releases", {name: name});
+    },
+    get: async(number) =>
+    {
+        return get("releases", {number: number});
+    },
+    getAll: async() =>
+    {
+        return getAll("releases");
     }
 }
 
-async function connectDB(callback)
+async function start(name = dbName)
 {
-    let db = null;
-    return await MongoClient.connect(URL).then(async (val) =>
+    return await MongoClient.connect(PATH + name).then(async (val) =>
     {
-        db = val;
-        return await callback(db);
-    }).then((val) =>
-    {
-        db.close();
+        mongod = val;
+        db = val.db(dbName);
     }).catch((err) =>
     {
-        if(db) db.close();
+        if(mongod) mongod.close();
         throw err;
     });
 }
 
-async function get(collection, query)
+async function close()
 {
-    connectDB(async (db) =>
-    {
-        return await db.db(DB_NAME).collection(collection).findOne(query);
-    });
+    mongod.close();
 }
 
+/**
+ * Returns a single entry from a collection based on the given query
+ * 
+ * @param {string} collection 
+ * @param {Object} query 
+ */
+async function get(collection, query)
+{
+    console.log(collection);
+    console.log(query);
+    let r = await db.collection(collection).findOne(query, { projection :{ _id: false }});
+    console.log(r);
+    return r;
+}
+
+/**
+ * Returns all entries in the given collection as an array
+ * 
+ * @param {string} collection 
+ */
 async function getAll(collection)
 {
-    connectDB(async (db) =>
-    {
-        return await db.db(DB_NAME).collection(collection).find({});
-    });
+    return await db.collection(collection).find({}, { projection :{ _id: false }}).toArray();
 }
 
 async function update(collection, identifierQuery, updateQuery)
 {
-    connectDB(async (db) =>
-    {
-        return await db.db(DB_NAME).collection(collection).updateOne(identifierQuery, updateQuery);
-    });
+    return await db.collection(collection).updateOne(identifierQuery, updateQuery);
 }
 
 async function remove(collection, query)
 {
-    connectDB(async (db) => await db.db(DB_NAME).collection(collection).deleteOne(query));
+    await db.collection(collection).deleteOne(query);
 }
 
 async function insert(collection, containsQuery, value)
 {
-    let db = null;
-    return await MongoClient.connect(URL).then(async (val) =>
-    {
-        db = val;
-        return await contains(collection, containsQuery);
-    }).then(async (val) =>
+    return await contains(collection, containsQuery).then(async (val) =>
     {
         if(val) throw new Error(collection + " already contains entry");
-        return await db.db(DB_NAME).collection(collection).insertOne(value);
+        return await db.collection(collection).insertOne(value);
     }).then(async (val) =>
     {
-        db.close();
         return val.ops[0];
-    }).catch((err) =>
-    {
-        if(db) db.close();
-        throw err;
     });
 }
 
@@ -235,12 +260,7 @@ async function insert(collection, containsQuery, value)
  */
 async function queryDB(collection, query)
 {
-    return await MongoClient.connect(URL).then(async (db) =>
-    {
-        var docs = await db.db(DB_NAME).collection(collection).find(query).toArray();
-        db.close();
-        return docs;
-    });
+    return await db.collection(collection).find(query).toArray();
 }
 
 /**
@@ -251,13 +271,25 @@ async function queryDB(collection, query)
  */
 async function contains(collection, query)
 {
-    return await queryDB(collection, query).then((docs) => docs.length > 0);
+    return await queryDB(collection, query).then((docs) => 
+    {
+        return docs.length > 0;
+    });
+}
+
+function getDB()
+{
+    return db;
 }
 
 module.exports = {
     drivers,
     locations,
     releases,
-    DB_NAME,
-    LOCATION_TYPES
+    trucks,
+    dbName,
+    LOCATION_TYPES,
+    start,
+    close,
+    getDB
 }
