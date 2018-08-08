@@ -28,7 +28,7 @@ api.get('/rounds/:date', (req, res) => {
 // This needs to better process the data returned from the database so that it trims it to fit the smaller format.
 api.get('/releases/:date', (req, res) => {
 	dbHelper.releases.get(null).then((result) => {
-		res.send(result);
+		res.send(result.releases);
 	});
 });
 
