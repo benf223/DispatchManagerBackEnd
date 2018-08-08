@@ -102,8 +102,6 @@ const locations = {
 const trucks = {
     insert: async (name, type) =>
     {
-        console.log(name);
-        console.log(type);
         if(!TRUCK_TYPES.includes(type)) throw new Error("Truck type '" + type + "' is not a valid type");
         let entry = {
             name: name,
@@ -121,7 +119,6 @@ const trucks = {
     },
     get: async (name) =>
     {
-        console.log(name);
         return await get("trucks", {name: name});
     },
     getAll: async () =>
@@ -214,10 +211,7 @@ async function close()
  */
 async function get(collection, query)
 {
-    console.log(collection);
-    console.log(query);
     let r = await db.collection(collection).findOne(query, { projection :{ _id: false }});
-    console.log(r);
     return r;
 }
 
@@ -254,16 +248,6 @@ async function insert(collection, containsQuery, value)
 }
 
 /**
- * 
- * @param {string} collection - Name of collection to search
- * @param {Object} query - Query to filter search
- */
-async function queryDB(collection, query)
-{
-    return await db.collection(collection).find(query).toArray();
-}
-
-/**
  * Returns true if the associated element is in the collection
  * 
  * @param {string} collection: Name of the collection to be checked
@@ -271,9 +255,9 @@ async function queryDB(collection, query)
  */
 async function contains(collection, query)
 {
-    return await queryDB(collection, query).then((docs) => 
+    return await db.collection(collection).findOne(query).then((docs) => 
     {
-        return docs.length > 0;
+        return docs != null;
     });
 }
 

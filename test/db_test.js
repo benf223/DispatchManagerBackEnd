@@ -47,6 +47,7 @@ after(function()
 
 describe("Database Collections", function()
 {
+    this.timeout(2500);
     describe("locations", function()
     {
         describe("insert()", function()
@@ -416,18 +417,18 @@ describe("Database Collections", function()
             type: "Skeletal"
         }
 
-        beforeEach(function()
-        {
-            testdb.collection("trucks").remove({});
-        });
-
-        after(function()
-        {
-            testdb.collection("trucks").remove({});
-        });
-
         describe("insert()", function()
         {
+            beforeEach(function()
+            {
+                testdb.collection("trucks").remove({});
+            });
+    
+            after(function()
+            {
+                testdb.collection("trucks").remove({});
+            });
+
             it("should insert a given truck into the 'trucks' collection", function()
             {
                 return db.trucks.insert(entry1.name, entry1.type).then(() =>
@@ -453,7 +454,7 @@ describe("Database Collections", function()
             });
         });
 
-        describe.only("get()", function ()
+        describe("get()", function ()
         {
             before(function()
             {
