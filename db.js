@@ -202,7 +202,8 @@ const rounds = {
 					id: 'truck1', dayRounds:
 						[
 							{
-								roundNumber: 1, slots:
+								roundNumber: 1,
+								slots:
 									[
 										{
 											supports40: true,
@@ -699,7 +700,8 @@ const rounds = {
 						],
 				},
 				{
-					id: 'truck3', dayRounds:
+					id: 'truck3',
+					dayRounds:
 						[
 							{
 								roundNumber: 1, slots:
@@ -1054,4 +1056,4 @@ module.exports = {
     rounds,
     DB_NAME,
     LOCATION_TYPES
-}
+};

@@ -18,9 +18,10 @@ var auth = express.Router();
 api.get('/start', (req, res) => {
 });
 
+// Rounds assigned to each truck on a given day
 api.get('/rounds/:date', (req, res) => {
 	dbHelper.rounds.get(null).then((result) => {
-		res.send(result);
+		res.send(result.rounds);
 	});
 });
 
@@ -35,6 +36,12 @@ api.get('/releases/:date', (req, res) => {
 api.get('/full_releases/:data', (req, res) => {
 	let params = req.params.data.split('@');
 	res.send(dbHelper.releases.get('full'));
+});
+
+// Requires a truckID and a truck with it's slots and will replace the whole thing in the database
+api.post('/update_rounds', (req, res) => {
+	console.log(req.body);
+	res.sendStatus(200);
 });
 
 auth.post('/test', (req, res) => {
