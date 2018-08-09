@@ -204,7 +204,7 @@ describe("Database Collections", function()
         let entry1 = {
             number: 123456,
             client: "abc inc.",
-            containerType: "20ft",
+            containerType: db.ContainerTypeEnum.twenty,
             quantity: 50,
             acceptanceDate: util.createDate(1, 2, 2018),
             cutoffDate: util.createDate(15, 3, 2018),
@@ -215,7 +215,7 @@ describe("Database Collections", function()
         let entry2 = {
             number: 789123,
             client: "def inc.",
-            containerType: "40ft",
+            containerType: db.ContainerTypeEnum.forty,
             quantity: 35,
             acceptanceDate: util.createDate(2, 3, 2018),
             cutoffDate: util.createDate(1, 4, 2018),
@@ -409,12 +409,12 @@ describe("Database Collections", function()
     {
         let entry1 = {
             name: "Truck1",
-            type: "Tribox"
+            type: db.TruckTypeEnum.tribox
         }
 
         let entry2 = {
             name: "Truck2",
-            type: "Skeletal"
+            type: db.TruckTypeEnum.skeletal
         }
 
         describe("insert()", function()

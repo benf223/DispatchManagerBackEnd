@@ -12,9 +12,46 @@ const util = require("./util");
 const je = require("./journeyEstimator");
 const dbName = "recur_db"; // "test_db" or "recur_db"
 const PATH = "mongodb://localhost:27017/";
-const LOCATION_TYPES = ["Yard", "Port", "Rail"];
-const CONTAINER_TYPES = ["20ft", "40ft"];
-const TRUCK_TYPES = ["Tribox", "Skeletal"];
+
+const LocationTypeEnum = {
+    yard: 0,
+    port: 1,
+    rail: 2,
+    parse: (s) => parseEnum(s, LocationTypeEnum),
+    toString: (e) => getEnumString(e, this)
+}
+
+const ContainerTypeEnum = {
+    twenty: 0,
+    forty: 1,
+    parse: (s) => parseEnum(s, ContainerTypeEnum),
+    toString: (e) => getEnumString(e, this)
+}
+
+const TruckTypeEnum = {
+    tribox: 0,
+    skeletal: 1,
+    parse: (s) => parseEnum(s, TruckTypeEnum),
+    toString: (e) => getEnumString(e, this)
+}
+
+function getEnumString(e, type)
+{
+    return Object.keys(type)[e];
+}
+
+function parseEnum(s, type)
+{
+    let e = type[s.trim().toLowerCase()];
+    if(e || e == 0) return e;
+    else throw new Error("'" + s + "' cannot be parsed.");
+}
+
+function isValidEnum(e, type)
+{
+    return typeof Object.keys(type)[e] != "undefined";
+}
+
 
 var mongod = null;
 var db = null;
@@ -45,7 +82,15 @@ const locations = {
         if(!(await je.validateAddress(address))) throw new Error("Address not found");
 
         // Validate location type
-        if(!LOCATION_TYPES.includes(type)) throw new Error("Location type '" + type + "' is not a valid type");
+        try
+        {
+            if(typeof type == "string") containerType = LocationTypeEnum.parse(type);
+            else if(!isValidEnum(type, LocationTypeEnum)) throw new Error();
+        }
+        catch(err)
+        {
+            throw new Error("Location type '" + type + "' is not a valid type");
+        }
 
         try
         {
@@ -102,12 +147,19 @@ const locations = {
 const trucks = {
     insert: async (name, type) =>
     {
-        if(!TRUCK_TYPES.includes(type)) throw new Error("Truck type '" + type + "' is not a valid type");
-        let entry = {
-            name: name,
-            type: type
+        if(!name) throw new Error("A name must be supplied");
+
+        try
+        {
+            if(typeof type == "string") containerType = TruckTypeEnum.parse(type);
+            else if(!isValidEnum(type, TruckTypeEnum)) throw new Error();
         }
-        return await insert("trucks", {name: name}, entry);
+        catch(err)
+        {
+            throw new Error("Truck type '" + type + "' is not a valid type");
+        }
+
+        return await insert("trucks", {name: name}, {name: name, type: type});
     },
     update: async (name, query) =>
     {
@@ -138,9 +190,16 @@ const releases = {
         // Check quantity is positive integer
         if(!Number.isInteger(quantity) || quantity <= 0) throw new Error("Quantity '" + quantity + "' must be a positive integer");
         
-        // Validate container type
-        if(!CONTAINER_TYPES.includes(containerType)) throw new Error("Container type '" + containerType + "' is not a valid type");
-        
+        try
+        {
+            if(typeof containerType == "string") containerType = ContainerTypeEnum.parse(containerType);
+            else if(!isValidEnum(containerType, ContainerTypeEnum)) throw new Error();
+        }
+        catch(err)
+        {
+            throw new Error("Container type '" + containerType + "' is not a valid type");
+        }
+
         // Validate dates
         if(!(acceptanceDate instanceof Date)) throw new Error("'" + acceptanceDate + "' is not a valid date");
         if(!(cutoffDate instanceof Date)) throw new Error("'" + cutoffDate + "' is not a valid date");
@@ -272,8 +331,10 @@ module.exports = {
     releases,
     trucks,
     dbName,
-    LOCATION_TYPES,
     start,
     close,
-    getDB
+    getDB,
+    LocationTypeEnum,
+    ContainerTypeEnum,
+    TruckTypeEnum
 }
