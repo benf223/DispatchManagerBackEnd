@@ -3,6 +3,8 @@
  * 
  * Interface enabling access and manipulation of database.
  * 
+ * Before use, database must be started using start() and closed after use using close()
+ * 
  * Database actions include find() insert(), update() or remove() for each collection
  * e.g. locations.insert(), releases.remove()
  */
@@ -12,6 +14,9 @@ const util = require("./util");
 const je = require("./journeyEstimator");
 const dbName = "recur_db"; // "test_db" or "recur_db"
 const PATH = "mongodb://localhost:27017/";
+
+var mongod = null;
+var db = null;
 
 const LocationTypeEnum = {
     yard: 0,
@@ -35,11 +40,23 @@ const TruckTypeEnum = {
     toString: (e) => getEnumString(e, this)
 }
 
+/**
+ * Returns name of enum value.
+ * 
+ * @param {number}: enumeration value
+ * @param {Object}: enumeration type
+ */
 function getEnumString(e, type)
 {
     return Object.keys(type)[e];
 }
 
+/**
+ * Returns enum value from a string
+ * 
+ * @param {string}: enumeration name
+ * @param {Object}: enumeration type
+ */
 function parseEnum(s, type)
 {
     let e = type[s.trim().toLowerCase()];
@@ -47,14 +64,16 @@ function parseEnum(s, type)
     else throw new Error("'" + s + "' cannot be parsed.");
 }
 
+/**
+ * @param {number}: enumeration value
+ * @param {Object}: enumeration type
+ * 
+ * @returns true if enumeration maps to a value
+ */
 function isValidEnum(e, type)
 {
     return typeof Object.keys(type)[e] != "undefined";
 }
-
-
-var mongod = null;
-var db = null;
 
 const drivers = {
     insert: async (name, availableDays, avoidLocations) =>
@@ -72,6 +91,13 @@ const drivers = {
 }
 
 const locations = {
+    /**
+     * @param {string} name
+     * @param {(string | number)} type: type of yard as a LocationTypeEnum or name of enum as a string
+     * @param {string} openingTime: 24 hour format hh:mm
+     * @param {string} closingTime: 24 hour format hh:mm
+     * @param {boolean} requiresBooking
+     */
     insert: async (name, address, type = "Yard", openingTime = null, closingTime = null, requiresBooking = false) =>
     {
         // Check required arguments
@@ -92,6 +118,7 @@ const locations = {
             throw new Error("Location type '" + type + "' is not a valid type");
         }
 
+        // Validate times
         try
         {
             openingTime = util.parseTimeOfDay(openingTime);
@@ -110,6 +137,7 @@ const locations = {
             throw new Error("Invalid closing time: " + err.message);
         }
 
+        // Check opening time is before closing time
         if(!util.timeOfDayIsBefore(openingTime, closingTime)) throw new Error("Opening time must be before closing time");
 
         requiresBooking = requiresBooking ? true : false;
@@ -134,6 +162,9 @@ const locations = {
     {
         return await remove("locations", {name: name});
     },
+    /**
+     * @param {string} name
+     */
     get: async (name) =>
     {
         return get("locations", {name: name});
@@ -145,10 +176,16 @@ const locations = {
 }
 
 const trucks = {
+    /**
+     * @param {string} name
+     * @param {(string | number)} type: type of truck as a TruckTypeEnum or name of enum as a string
+     */
     insert: async (name, type) =>
     {
+        // Validate required arguments
         if(!name) throw new Error("A name must be supplied");
 
+        // Validate type
         try
         {
             if(typeof type == "string") containerType = TruckTypeEnum.parse(type);
@@ -181,6 +218,16 @@ const trucks = {
 
 const releases = {
     // To do: Find out format of release number
+    /**
+     * @param {string} number
+     * @param {string} client
+     * @param {(string | number)} type: type of container as a ContainerTypeEnum or name of enum as a string
+     * @param {number} quantity: positive integer
+     * @param {Date} acceptanceDate
+     * @param {Date} cutoffDate
+     * @param {string} from: must match location name from database
+     * @param {string} to: must match location name from database
+     */
     insert: async (number, client, containerType, quantity, acceptanceDate, cutoffDate, from, to) =>
     {
         // Check required arguments
@@ -190,6 +237,7 @@ const releases = {
         // Check quantity is positive integer
         if(!Number.isInteger(quantity) || quantity <= 0) throw new Error("Quantity '" + quantity + "' must be a positive integer");
         
+        // Validate container type
         try
         {
             if(typeof containerType == "string") containerType = ContainerTypeEnum.parse(containerType);
@@ -244,6 +292,10 @@ const releases = {
     }
 }
 
+/**
+ * Initializes database connection
+ * @param {string} name 
+ */
 async function start(name = dbName)
 {
     return await MongoClient.connect(PATH + name).then(async (val) =>
@@ -257,6 +309,7 @@ async function start(name = dbName)
     });
 }
 
+// Close database
 async function close()
 {
     mongod.close();
@@ -270,8 +323,7 @@ async function close()
  */
 async function get(collection, query)
 {
-    let r = await db.collection(collection).findOne(query, { projection :{ _id: false }});
-    return r;
+    return await db.collection(collection).findOne(query, { projection :{ _id: false }});
 }
 
 /**
@@ -294,8 +346,18 @@ async function remove(collection, query)
     await db.collection(collection).deleteOne(query);
 }
 
+/**
+ * Inserts a single entry into a given collection.
+ * 
+ * @param {string} collection 
+ * @param {Object} containsQuery: If specified and an entry already exists based on this query, throws error
+ * @param {Object} value
+ * 
+ * @returns {Object} the inserted value
+ */
 async function insert(collection, containsQuery, value)
 {
+    // Checks entry does not already exist
     return await contains(collection, containsQuery).then(async (val) =>
     {
         if(val) throw new Error(collection + " already contains entry");
@@ -307,17 +369,14 @@ async function insert(collection, containsQuery, value)
 }
 
 /**
- * Returns true if the associated element is in the collection
- * 
  * @param {string} collection: Name of the collection to be checked
  * @param {Object} query: Query to match with elements in the collection
+ * 
+ * @returns true if the element is in the collection
  */
 async function contains(collection, query)
 {
-    return await db.collection(collection).findOne(query).then((docs) => 
-    {
-        return docs != null;
-    });
+    return await db.collection(collection).findOne(query) != null;
 }
 
 function getDB()

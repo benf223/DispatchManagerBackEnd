@@ -421,12 +421,12 @@ describe("Database Collections", function()
         {
             beforeEach(function()
             {
-                testdb.collection("trucks").remove({});
+                return testdb.collection("trucks").remove({});
             });
     
             after(function()
             {
-                testdb.collection("trucks").remove({});
+                return testdb.collection("trucks").remove({});
             });
 
             it("should insert a given truck into the 'trucks' collection", function()
