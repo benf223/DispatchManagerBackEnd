@@ -10,8 +10,8 @@
 const MongoClient = require("mongodb").MongoClient;
 const util = require("./util");
 const je = require("./journeyEstimator");
-const dbName = "recur_db"; // "test_db" or "recur_db"
-const PATH = "mongodb://demo-recur-app.herokuapp.com/";
+const dbName = "demo-recur-db"; // "test_db" or "recur_db"
+const PATH = "mongodb://admin:recurdbadmin1@ds221242.mlab.com:21242/demo-recur-db";
 
 var mongod = null;
 var db = null;
@@ -1180,6 +1180,4 @@ module.exports = {
     ContainerTypeEnum,
     TruckTypeEnum,
     rounds,
-    DB_NAME,
-    LOCATION_TYPES
-}
+};
