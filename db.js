@@ -13,7 +13,7 @@ const MongoClient = require("mongodb").MongoClient;
 const util = require("./util");
 const je = require("./journeyEstimator");
 const dbName = "recur_db"; // "test_db" or "recur_db"
-const PATH = "mongodb://localhost:27017/";
+const PATH = "mongodb://demo-recur-app.herokuapp.com/";
 
 var mongod = null;
 var db = null;
