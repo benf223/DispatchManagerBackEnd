@@ -28,7 +28,9 @@ app.get('/api/rounds/:date', (req, res) => {
 app.get('/api/releases/:date', (req, res) => {
 	dbHelper.releases.get(null).then((result) => {
 		res.send(result);
-	})
+	});
+
+	dbHelper.drivers.insert('test', 'today', 'here');
 });
 
 // This needs to retrieve the whole release given the parameters
@@ -37,6 +39,8 @@ app.get('/api/full_releases/:data', (req, res) => {
 	dbHelper.releases.get('full').then((result) => {
 		res.send(result);
 	});
-})
+});
+
+
 
 app.listen(process.env.PORT || 3000);
