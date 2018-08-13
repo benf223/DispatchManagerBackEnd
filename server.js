@@ -32,7 +32,7 @@ app.get('/api/releases/:date', (req, res) => {
 		res.send(result);
 	});
 
-	dbHelper.drivers.insert('test', 'today', 'here');
+	dbHelper.trucks.insert('test', 'tribox');
 });
 
 // This needs to retrieve the whole release given the parameters
