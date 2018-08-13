@@ -1084,9 +1084,11 @@ async function start(name = dbName)
     return await MongoClient.connect(PATH + name).then(async (val) =>
     {
         mongod = val;
-        db = val.db(dbName);
+		db = val.db();
+		console.log(db);
     }).catch((err) =>
     {
+		console.log(err);
         if(mongod) mongod.close();
         throw err;
     });
