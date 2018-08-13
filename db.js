@@ -3,6 +3,8 @@
  * 
  * Interface enabling access and manipulation of database.
  * 
+ * Before use, database must be started using start() and closed after use using close()
+ * 
  * Database actions include find() insert(), update() or remove() for each collection
  * e.g. locations.insert(), releases.remove()
  */
@@ -10,10 +12,68 @@
 const MongoClient = require("mongodb").MongoClient;
 const util = require("./util");
 const je = require("./journeyEstimator");
-const DB_NAME = "test_db"; // "test_db" or "recur_db"
-const URL = "mongodb://localhost:27017/" + DB_NAME;
-const LOCATION_TYPES = ["Yard", "Port", "Rail"];
-const CONTAINER_TYPES = ["20ft", "40ft"];
+const dbName = "recur_db"; // "test_db" or "recur_db"
+const PATH = "mongodb://localhost:27017/";
+
+var mongod = null;
+var db = null;
+
+const LocationTypeEnum = {
+    yard: 0,
+    port: 1,
+    rail: 2,
+    parse: (s) => parseEnum(s, LocationTypeEnum),
+    toString: (e) => getEnumString(e, this)
+}
+
+const ContainerTypeEnum = {
+    twenty: 0,
+    forty: 1,
+    parse: (s) => parseEnum(s, ContainerTypeEnum),
+    toString: (e) => getEnumString(e, this)
+}
+
+const TruckTypeEnum = {
+    tribox: 0,
+    skeletal: 1,
+    parse: (s) => parseEnum(s, TruckTypeEnum),
+    toString: (e) => getEnumString(e, this)
+}
+
+/**
+ * Returns name of enum value.
+ * 
+ * @param {number}: enumeration value
+ * @param {Object}: enumeration type
+ */
+function getEnumString(e, type)
+{
+    return Object.keys(type)[e];
+}
+
+/**
+ * Returns enum value from a string
+ * 
+ * @param {string}: enumeration name
+ * @param {Object}: enumeration type
+ */
+function parseEnum(s, type)
+{
+    let e = type[s.trim().toLowerCase()];
+    if(e || e == 0) return e;
+    else throw new Error("'" + s + "' cannot be parsed.");
+}
+
+/**
+ * @param {number}: enumeration value
+ * @param {Object}: enumeration type
+ * 
+ * @returns true if enumeration maps to a value
+ */
+function isValidEnum(e, type)
+{
+    return typeof Object.keys(type)[e] != "undefined";
+}
 
 const drivers = {
     insert: async (name, availableDays, avoidLocations) =>
@@ -31,6 +91,13 @@ const drivers = {
 }
 
 const locations = {
+    /**
+     * @param {string} name
+     * @param {(string | number)} type: type of yard as a LocationTypeEnum or name of enum as a string
+     * @param {string} openingTime: 24 hour format hh:mm
+     * @param {string} closingTime: 24 hour format hh:mm
+     * @param {boolean} requiresBooking
+     */
     insert: async (name, address, type = "Yard", openingTime = null, closingTime = null, requiresBooking = false) =>
     {
         // Check required arguments
@@ -41,8 +108,17 @@ const locations = {
         if(!(await je.validateAddress(address))) throw new Error("Address not found");
 
         // Validate location type
-        if(!LOCATION_TYPES.includes(type)) throw new Error("Location type '" + type + "' is not a valid type");
+        try
+        {
+            if(typeof type == "string") containerType = LocationTypeEnum.parse(type);
+            else if(!isValidEnum(type, LocationTypeEnum)) throw new Error();
+        }
+        catch(err)
+        {
+            throw new Error("Location type '" + type + "' is not a valid type");
+        }
 
+        // Validate times
         try
         {
             openingTime = util.parseTimeOfDay(openingTime);
@@ -61,6 +137,7 @@ const locations = {
             throw new Error("Invalid closing time: " + err.message);
         }
 
+        // Check opening time is before closing time
         if(!util.timeOfDayIsBefore(openingTime, closingTime)) throw new Error("Opening time must be before closing time");
 
         requiresBooking = requiresBooking ? true : false;
@@ -85,20 +162,41 @@ const locations = {
     {
         return await remove("locations", {name: name});
     },
+    /**
+     * @param {string} name
+     */
     get: async (name) =>
     {
         return get("locations", {name: name});
     },
-    getAll: async (name) =>
+    getAll: async () =>
     {
         return getAll("locations");
     }
 }
 
 const trucks = {
-    insert: async (name) =>
+    /**
+     * @param {string} name
+     * @param {(string | number)} type: type of truck as a TruckTypeEnum or name of enum as a string
+     */
+    insert: async (name, type) =>
     {
-        return await insert("trucks", null, {name : name});
+        // Validate required arguments
+        if(!name) throw new Error("A name must be supplied");
+
+        // Validate type
+        try
+        {
+            if(typeof type == "string") containerType = TruckTypeEnum.parse(type);
+            else if(!isValidEnum(type, TruckTypeEnum)) throw new Error();
+        }
+        catch(err)
+        {
+            throw new Error("Truck type '" + type + "' is not a valid type");
+        }
+
+        return await insert("trucks", {name: name}, {name: name, type: type});
     },
     update: async (name, query) =>
     {
@@ -107,11 +205,29 @@ const trucks = {
     remove: async (name) =>
     {
         return await remove("trucks", {name: name});
+    },
+    get: async (name) =>
+    {
+        return await get("trucks", {name: name});
+    },
+    getAll: async () =>
+    {
+        return await getAll("trucks");
     }
 }
 
 const releases = {
     // To do: Find out format of release number
+    /**
+     * @param {string} number
+     * @param {string} client
+     * @param {(string | number)} type: type of container as a ContainerTypeEnum or name of enum as a string
+     * @param {number} quantity: positive integer
+     * @param {Date} acceptanceDate
+     * @param {Date} cutoffDate
+     * @param {string} from: must match location name from database
+     * @param {string} to: must match location name from database
+     */
     insert: async (number, client, containerType, quantity, acceptanceDate, cutoffDate, from, to) =>
     {
         // Check required arguments
@@ -122,8 +238,16 @@ const releases = {
         if(!Number.isInteger(quantity) || quantity <= 0) throw new Error("Quantity '" + quantity + "' must be a positive integer");
         
         // Validate container type
-        if(!CONTAINER_TYPES.includes(containerType)) throw new Error("Container type '" + containerType + "' is not a valid type");
-        
+        try
+        {
+            if(typeof containerType == "string") containerType = ContainerTypeEnum.parse(containerType);
+            else if(!isValidEnum(containerType, ContainerTypeEnum)) throw new Error();
+        }
+        catch(err)
+        {
+            throw new Error("Container type '" + containerType + "' is not a valid type");
+        }
+
         // Validate dates
         if(!(acceptanceDate instanceof Date)) throw new Error("'" + acceptanceDate + "' is not a valid date");
         if(!(cutoffDate instanceof Date)) throw new Error("'" + cutoffDate + "' is not a valid date");
@@ -157,107 +281,119 @@ const releases = {
     remove: async (name) =>
     {
         return await remove("releases", {name: name});
+    },
+    get: async(number) =>
+    {
+        return get("releases", {number: number});
+    },
+    getAll: async() =>
+    {
+        return getAll("releases");
     }
 }
 
-async function connectDB(callback)
+/**
+ * Initializes database connection
+ * @param {string} name 
+ */
+async function start(name = dbName)
 {
-    let db = null;
-    return await MongoClient.connect(URL).then(async (val) =>
+    return await MongoClient.connect(PATH + name).then(async (val) =>
     {
-        db = val;
-        return await callback(db);
-    }).then((val) =>
-    {
-        db.close();
+        mongod = val;
+        db = val.db(dbName);
     }).catch((err) =>
     {
-        if(db) db.close();
+        if(mongod) mongod.close();
         throw err;
     });
 }
 
-async function get(collection, query)
+// Close database
+async function close()
 {
-    connectDB(async (db) =>
-    {
-        return await db.db(DB_NAME).collection(collection).findOne(query);
-    });
+    mongod.close();
 }
 
+/**
+ * Returns a single entry from a collection based on the given query
+ * 
+ * @param {string} collection 
+ * @param {Object} query 
+ */
+async function get(collection, query)
+{
+    return await db.collection(collection).findOne(query, { projection :{ _id: false }});
+}
+
+/**
+ * Returns all entries in the given collection as an array
+ * 
+ * @param {string} collection 
+ */
 async function getAll(collection)
 {
-    connectDB(async (db) =>
-    {
-        return await db.db(DB_NAME).collection(collection).find({});
-    });
+    return await db.collection(collection).find({}, { projection :{ _id: false }}).toArray();
 }
 
 async function update(collection, identifierQuery, updateQuery)
 {
-    connectDB(async (db) =>
-    {
-        return await db.db(DB_NAME).collection(collection).updateOne(identifierQuery, updateQuery);
-    });
+    return await db.collection(collection).updateOne(identifierQuery, updateQuery);
 }
 
 async function remove(collection, query)
 {
-    connectDB(async (db) => await db.db(DB_NAME).collection(collection).deleteOne(query));
+    await db.collection(collection).deleteOne(query);
 }
 
+/**
+ * Inserts a single entry into a given collection.
+ * 
+ * @param {string} collection 
+ * @param {Object} containsQuery: If specified and an entry already exists based on this query, throws error
+ * @param {Object} value
+ * 
+ * @returns {Object} the inserted value
+ */
 async function insert(collection, containsQuery, value)
 {
-    let db = null;
-    return await MongoClient.connect(URL).then(async (val) =>
-    {
-        db = val;
-        return await contains(collection, containsQuery);
-    }).then(async (val) =>
+    // Checks entry does not already exist
+    return await contains(collection, containsQuery).then(async (val) =>
     {
         if(val) throw new Error(collection + " already contains entry");
-        return await db.db(DB_NAME).collection(collection).insertOne(value);
+        return await db.collection(collection).insertOne(value);
     }).then(async (val) =>
     {
-        db.close();
         return val.ops[0];
-    }).catch((err) =>
-    {
-        if(db) db.close();
-        throw err;
     });
 }
 
 /**
- * 
- * @param {string} collection - Name of collection to search
- * @param {Object} query - Query to filter search
- */
-async function queryDB(collection, query)
-{
-    return await MongoClient.connect(URL).then(async (db) =>
-    {
-        var docs = await db.db(DB_NAME).collection(collection).find(query).toArray();
-        db.close();
-        return docs;
-    });
-}
-
-/**
- * Returns true if the associated element is in the collection
- * 
  * @param {string} collection: Name of the collection to be checked
  * @param {Object} query: Query to match with elements in the collection
+ * 
+ * @returns true if the element is in the collection
  */
 async function contains(collection, query)
 {
-    return await queryDB(collection, query).then((docs) => docs.length > 0);
+    return await db.collection(collection).findOne(query) != null;
+}
+
+function getDB()
+{
+    return db;
 }
 
 module.exports = {
     drivers,
     locations,
     releases,
-    DB_NAME,
-    LOCATION_TYPES
+    trucks,
+    dbName,
+    start,
+    close,
+    getDB,
+    LocationTypeEnum,
+    ContainerTypeEnum,
+    TruckTypeEnum
 }
