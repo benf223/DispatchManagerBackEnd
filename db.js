@@ -1086,9 +1086,11 @@ async function start(name = dbName)
     return await MongoClient.connect(PATH + name).then(async (val) =>
     {
         mongod = val;
-        db = val.db(dbName);
+		db = val.db();
+		console.log(db);
     }).catch((err) =>
     {
+		console.log(err);
         if(mongod) mongod.close();
         throw err;
     });
@@ -1161,7 +1163,16 @@ async function insert(collection, containsQuery, value)
  */
 async function contains(collection, query)
 {
-    return await db.collection(collection).findOne(query) != null;
+    console.log("Collection: " + collection);
+    console.log("Query: ", query);
+    return await db.collection(collection).findOne(query).then((val) =>
+    {
+        console.log(val);
+        return val ? true : false;
+	}).catch((err) =>
+	{
+		console.log("Error: " + err);
+	});
 }
 
 function getDB()
