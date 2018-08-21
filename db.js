@@ -11,7 +11,8 @@ const MongoClient = require("mongodb").MongoClient;
 const util = require("./util");
 const je = require("./journeyEstimator");
 const dbName = "demo-recur-db"; // "test_db" or "recur_db"
-const PATH = "mongodb://admin:recurdbadmin1@ds221242.mlab.com:21242/demo-recur-db";
+//const PATH = "mongodb://admin:recurdbadmin1@ds221242.mlab.com:21242/demo-recur-db";
+const PATH = "mongodb://demo-recur-api.herokuapp.com";
 
 var mongod = null;
 var db = null;
