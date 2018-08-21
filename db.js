@@ -1082,9 +1082,9 @@ const rounds = {
  * Initializes database connection
  * @param {string} name
  */
-async function start(name = dbName)
+async function start(path = PATH)
 {
-    return await MongoClient.connect(PATH + name).then(async (val) =>
+    return await MongoClient.connect(PATH).then(async (val) =>
     {
         mongod = val;
 		db = val.db();
