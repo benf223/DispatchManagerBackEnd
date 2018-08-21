@@ -16,6 +16,9 @@ dbHelper.start(dbHelper.dbName).then(() =>
 }).then((truck) =>
 {
 	console.log(truck);
+}).catch((err) =>
+{
+	console.log("Error: " + err);
 });
 
 app.use((req, res, next) => {
