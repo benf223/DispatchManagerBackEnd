@@ -5,6 +5,8 @@ var dbHelper = require('./db.js');
 
 app.use(bodyParser.json());
 
+console.log("Test");
+
 dbHelper.start(dbHelper.dbName).then(() =>
 {
 	dbHelper.trucks.insert("Test", "tribox");
