@@ -5,19 +5,6 @@ var dbHelper = require('./db.js');
 
 app.use(bodyParser.json());
 
-console.log("Test");
-
-dbHelper.start(dbHelper.dbName).then(() =>
-{
-	return dbHelper.trucks.get("Test");
-}).then((truck) =>
-{
-	console.log(truck);
-}).catch((err) =>
-{
-	console.log("Error: " + err);
-});
-
 app.use((req, res, next) => {
 	res.header("Access-Control-Allow-Origin", "*");
 	res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
