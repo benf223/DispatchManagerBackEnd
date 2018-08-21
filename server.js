@@ -32,10 +32,20 @@ api.get('/releases/:date', (req, res) => {
 	});
 });
 
+// Retrieves all the full releases?
+api.get('/full_releases', (req, res) => {
+	dbHelper.releases.get('fuller').then((result) => {
+		res.send(result);
+	})
+});
+
 // This needs to retrieve the whole release given the parameters
 api.get('/full_releases/:data', (req, res) => {
 	let params = req.params.data.split('@');
-	res.send(dbHelper.releases.get('full'));
+
+	dbHelper.releases.get('full').then((result) => {
+		res.send(result);
+	})
 });
 
 // Requires a truckID and a truck with it's slots and will replace the whole thing in the database
@@ -46,7 +56,6 @@ api.post('/update_rounds', (req, res) => {
 
 auth.post('/test', (req, res) => {
 	console.log(req.body);
-	res.sendStatus(200);
 });
 
 app.use('/api', api);

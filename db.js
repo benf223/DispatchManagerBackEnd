@@ -160,6 +160,33 @@ const releases = {
     },
 	get: async (name) =>
 	{
+		if (name === 'full') {
+			return {
+				release: 'a',
+				qtyForty: 20,
+				qtyTwenty: 10,
+				colour: '#F8BBA7'
+			}
+		}
+		else if (name === 'fuller') {
+			return [{
+				release: 'a',
+				qtyForty: 20,
+				qtyTwenty: 10,
+				colour: '#F8BBA7'
+			}, {
+				release: 'b',
+				qtyForty: 33,
+				qtyTwenty: 20,
+				colour: '33BB9C'
+			}, {
+				release: 'c',
+				qtyForty: 17,
+				qtyTwenty: 99,
+				colour: 'FF0066'
+			}]
+		}
+
 		return {
 			releases: [
 				{release: '1', qty: 2, size: 40, colour: '#FF0000'},
