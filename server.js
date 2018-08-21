@@ -5,8 +5,10 @@ var dbHelper = require('./db.js');
 
 app.use(bodyParser.json());
 
-dbHelper.start(dbHelper.dbName);
-dbHelper.trucks.insert("Test", "tribox").then(() =>
+dbHelper.start(dbHelper.dbName).then(() =>
+{
+	dbHelper.trucks.insert("Test", "tribox");
+}).then(() =>
 {
 	return dbHelper.trucks.get("Test");
 }).then((truck) =>
