@@ -6,6 +6,13 @@ var dbHelper = require('./db.js');
 app.use(bodyParser.json());
 
 dbHelper.start(dbHelper.dbName);
+dbHelper.trucks.insert("Test", "tribox").then(() =>
+{
+	return dbHelper.trucks.get("Test");
+}).then((truck) =>
+{
+	console.log(truck);
+});
 
 app.use((req, res, next) => {
 	res.header("Access-Control-Allow-Origin", "*");
