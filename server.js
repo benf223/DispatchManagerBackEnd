@@ -9,9 +9,6 @@ console.log("Test");
 
 dbHelper.start(dbHelper.dbName).then(() =>
 {
-	dbHelper.trucks.insert("Test", "tribox");
-}).then(() =>
-{
 	return dbHelper.trucks.get("Test");
 }).then((truck) =>
 {
