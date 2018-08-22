@@ -158,9 +158,10 @@ const releases = {
     {
         return await remove("releases", {name: name});
     },
-	get: async (name) =>
+	get: async (type, date) =>
 	{
-		if (name === 'full') {
+		if (type === 'full') {
+			// This needs to better evaluate the date and the release type
 			return {
 				release: 'a',
 				qtyForty: 20,
@@ -168,7 +169,7 @@ const releases = {
 				colour: '#F8BBA7'
 			}
 		}
-		else if (name === 'fuller') {
+		else if (type === 'fuller') {
 			return [{
 				release: 'a',
 				qtyForty: 20,
@@ -217,11 +218,10 @@ const rounds = {
 	{
 		return await null;
 	},
-	get: async (name) =>
+	get: async (date) =>
 	{
-		if (name === 'full') {
-			return { colour: '#2FC066', release: release, qtyForty: 3, qtyTwenty: 20};
-		}
+		// Query the database for the current dates version of this data
+		// Date in for DD-MM-YYYY??
 
 		return {
 			rounds: [
@@ -979,6 +979,8 @@ const rounds = {
 				}
 			]
 		};
+
+		// return get("rounds", {date: date})
 	},
 };
 

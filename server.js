@@ -20,30 +20,37 @@ api.get('/start', (req, res) => {
 
 // Rounds assigned to each truck on a given day
 api.get('/rounds/:date', (req, res) => {
-	dbHelper.rounds.get(null).then((result) => {
+	let params = req.params.data;
+
+	dbHelper.rounds.get(params).then((result) => {
 		res.send(result.rounds);
 	});
 });
 
 // This needs to better process the data returned from the database so that it trims it to fit the smaller format.
 api.get('/releases/:date', (req, res) => {
-	dbHelper.releases.get(null).then((result) => {
+	let params = req.params.data;
+
+	dbHelper.releases.get(null, params).then((result) => {
 		res.send(result.releases);
 	});
 });
 
 // Retrieves all the full releases?
 api.get('/full_releases', (req, res) => {
-	dbHelper.releases.get('fuller').then((result) => {
+
+	// Should retrieve all releases that were started within the past 30 days?
+	dbHelper.releases.get('fuller', null).then((result) => {
 		res.send(result);
 	})
 });
 
 // This needs to retrieve the whole release given the parameters
-api.get('/full_releases/:data', (req, res) => {
+api.get('/full_releases/:releaseID', (req, res) => {
+	// This is bad form need to change it.
 	let params = req.params.data.split('@');
 
-	dbHelper.releases.get('full').then((result) => {
+	dbHelper.releases.get('full@' + params[0], params[1]).then((result) => {
 		res.send(result);
 	})
 });
