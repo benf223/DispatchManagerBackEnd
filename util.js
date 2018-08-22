@@ -56,9 +56,18 @@ function parseDateString(date)
     return date.getDate() + "/" + (date.getMonth() + 1) + "/" + date.getFullYear();
 }
 
+function getFirstProperty(obj)
+{
+    for(p in obj)
+    {
+        return obj[p];
+    }
+}
+
 module.exports = {
     parseTimeOfDay,
     timeOfDayIsBefore,
     createDate,
-    parseDateString
+    parseDateString,
+    getFirstProperty
 }
