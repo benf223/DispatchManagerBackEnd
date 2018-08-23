@@ -20,16 +20,16 @@ api.get('/start', (req, res) => {
 
 // Rounds assigned to each truck on a given day
 api.get('/rounds/:date', (req, res) => {
-	let params = req.params.data;
+	let params = req.params.date;
 
 	dbHelper.rounds.get(params).then((result) => {
-		res.send(result.rounds);
+		res.send(result);
 	});
 });
 
 // This needs to better process the data returned from the database so that it trims it to fit the smaller format.
 api.get('/releases/:date', (req, res) => {
-	let params = req.params.data;
+	let params = req.params.date;
 
 	dbHelper.releases.get(null, params).then((result) => {
 		res.send(result.releases);
@@ -48,7 +48,7 @@ api.get('/full_releases', (req, res) => {
 // This needs to retrieve the whole release given the parameters
 api.get('/full_releases/:releaseID', (req, res) => {
 	// This is bad form need to change it.
-	let params = req.params.data.split('@');
+	let params = req.params.releaseID.split('@');
 
 	dbHelper.releases.get('full@' + params[0], params[1]).then((result) => {
 		res.send(result);
