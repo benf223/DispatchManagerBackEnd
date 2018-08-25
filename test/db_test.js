@@ -7,7 +7,9 @@ chai.use(require("chai-as-promised"));
 const db = require("../db");
 const util = require("../util");
 const expect = chai.expect;
-const testDBPath = "mongodb://localhost/recur-test-db";
+const MongoClient = require("mongodb").MongoClient;
+const url = "mongodb://localhost:27017/test_db";
+const dbName = "test_db";
 
 let testdb = null;
 
@@ -53,7 +55,7 @@ const release2 = {
 
 before(function ()
 {
-    return db.start(testDBPath).then(() => 
+    return db.start(dbName).then(() => 
     {
         testdb = db.getDB();
     });
@@ -66,7 +68,7 @@ after(function()
 
 describe("Database Collections", function()
 {
-    this.timeout(10000);
+    this.timeout(4000);
 
     describe("locations", function()
     {
@@ -84,9 +86,9 @@ describe("Database Collections", function()
 
             it("should insert a given location into the 'locations' collection", () =>
             {
-                return insert("locations", location1).then(() => get("locations", {name: location1.name})).then((res) =>
+                return insert("locations", location1).then(() =>
                 {       
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(location1));     
+                    return expect(get("locations", {name: location1.name})).to.eventually.eql(JSON.stringify(location1));     
                 });
             });
 
@@ -108,7 +110,7 @@ describe("Database Collections", function()
 
             it("should throw an error if the location has an address not tracked by the Distance Matrix API", function()
             {
-                return expect(db.locations.insert(location1.name, "Fake Address", location1.type, location1.openingTime, location1.closingTime, location1.requiresBooking)).to.eventually.be.rejectedWith("Address 'Fake Address' not found");
+                return expect(db.locations.insert(location1.name, "Fake Address", location1.type, location1.openingTime, location1.closingTime, location1.requiresBooking)).to.eventually.be.rejectedWith("Address not found");
             });
 
             it("should throw an error if the location has an opening time with an invalid format", function()
@@ -155,164 +157,6 @@ describe("Database Collections", function()
             });
         });
 
-        describe("update()", function()
-        {
-            let updateValue;
-            let updatedEntry;
-
-            beforeEach(function()
-            {
-                updatedEntry = Object.assign({}, location1);
-                return remove("locations").then(() => insertAll({locations: [location1, location2]}));
-            });
-
-            after(function()
-            {
-                return remove("locations");
-            });
-
-            it("should update an entry with the given name", () =>
-            {
-                updateValue = "test";
-                updatedEntry.name = updateValue;
-
-                return db.locations.update(location1.name, {name: updateValue}).then(() =>
-                {
-                    return get("locations", {name: updateValue});
-                }).then((res) =>
-                {
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(updatedEntry));
-                });
-            });
-
-            it("should throw an error if the location has the same name as another entry", function()
-            {
-                return expect(db.locations.update(location1.name, {name: location2.name})).to.eventually.be.rejectedWith("locations already contains entry '" + location2.name + "'");
-            });
-
-            it("should update an entry with the given address", function()
-            {
-                updateValue = "1 Queen Street, Auckland";
-                updatedEntry.address = updateValue;
-
-                return db.locations.update(location1.name, {address: updateValue}).then(() =>
-                {
-                    return get("locations", {name: location1.name});
-                }).then((res) =>
-                {
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(updatedEntry));
-                });
-            });
-
-            it("should throw an error if the location has the same address as another entry", function()
-            {
-                return expect(db.locations.update(location1.name, {address: location2.address})).to.eventually.be.rejectedWith("locations already contains entry with address '" + location2.address + "'");
-            });
-
-            it("should throw an error if the address is not tracked by the Distance Matrix API", function()
-            {
-                return expect(db.locations.update(location1.name, {address: "Fake Address"})).to.eventually.be.rejectedWith("Address 'Fake Address' not found");
-            });
-
-            it("should update an entry with the given opening time", function()
-            {
-                updateValue = location2.openingTime;
-                updatedEntry.openingTime = updateValue;
-
-                return db.locations.update(location1.name, {openingTime: updateValue}).then(() =>
-                {
-                    return get("locations", {name: location1.name});
-                }).then((res) =>
-                {
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(updatedEntry));
-                });
-            });
-
-            it("should throw an error if the opening time is after or the same as the location's closing time", function()
-            {
-                return expect(db.locations.update(location1.name, {openingTime: "23:00"})).to.eventually.be.rejectedWith("Opening time must be before closing time").then(() =>
-                {
-                    return expect(db.locations.update(location1.name, {openingTime: location1.closingTime})).to.eventually.be.rejectedWith("Opening time must be before closing time");
-                }).then(() =>
-                {
-                    return expect(db.locations.update(location1.name, {openingTime: location2.closingTime, closingTime: location2.openingTime})).to.eventually.be.rejectedWith("Opening time must be before closing time");
-                });
-            });
-
-            it("should throw an error if the opening time has an invalid format", function()
-            {
-                return expect(db.locations.update(location1.name, {openingTime: "25:00"})).to.eventually.be.rejectedWith("Invalid hours '25' passed").then(() =>
-                {
-                    return expect(db.locations.update(location1.name, {openingTime: "8:60"})).to.eventually.be.rejectedWith("Invalid minutes '60' passed");
-                }).then(() =>
-                {
-                    return expect(db.locations.update(location1.name, {openingTime: "wrong"})).to.eventually.be.rejectedWith("'wrong' has invalid format");
-                });
-            });
-
-            it("should update an entry with the given closing time", function()
-            {
-                updateValue = location2.closingTime;
-                updatedEntry.closingTime = updateValue;
-
-                return db.locations.update(location1.name, {closingTime: updateValue}).then(() =>
-                {
-                    return get("locations", {name: location1.name});
-                }).then((res) =>
-                {
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(updatedEntry));
-                });
-            });
-
-            it("should throw an error if the closing time has an invalid format", function()
-            {
-                return expect(db.locations.update(location1.name, {closingTime: "25:00"})).to.eventually.be.rejectedWith("Invalid hours '25' passed").then(() =>
-                {
-                    return expect(db.locations.update(location1.name, {closingTime: "8:60"})).to.eventually.be.rejectedWith("Invalid minutes '60' passed");
-                }).then(() =>
-                {
-                    return expect(db.locations.update(location1.name, {closingTime: "wrong"})).to.eventually.be.rejectedWith("'wrong' has invalid format");
-                });
-            });
-
-            it("should throw an error if the closing time is before or the same as the location's opening time", function()
-            {
-                return expect(db.locations.update(location1.name, {closingTime: "3:00"})).to.eventually.be.rejectedWith("Closing time must be after opening time").then(() =>
-                {
-                    return expect(db.locations.update(location1.name, {closingTime: location1.openingTime})).to.eventually.be.rejectedWith("Closing time must be after opening time");
-                });
-            });
-
-            it("should update an entry with the given type", function()
-            {
-                updateValue = location2.type;
-                updatedEntry.type = updateValue;
-
-                return db.locations.update(location1.name, {type: updateValue}).then(() =>
-                {
-                    return get("locations", {name: location1.name});
-                }).then((res) =>
-                {
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(updatedEntry));
-                });
-            });
-
-            it("should throw an error if the type is not one of 'Yard', 'Port' or 'Rail'", function()
-            {
-                return expect(db.locations.update(location1.name, {type: "Place"})).to.eventually.be.rejectedWith("Location type 'Place' is not a valid type");
-            });
-
-            it("should throw an error if the name does not correspond to an entry", function()
-            {
-                return expect(db.locations.update("Invalid", {name: "Test", type: "Port"})).to.eventually.be.rejectedWith("No entry 'Invalid' found");
-            });
-
-            it("should throw an error if an invalid property is passed", function()
-            {
-                return expect(db.locations.update(location1.name, {test: "test"})).to.eventually.be.rejectedWith("'test' is not a valid property");
-            });
-        });
-
         describe("remove()", function()
         {
             beforeEach(function()
@@ -332,7 +176,7 @@ describe("Database Collections", function()
                     return db.locations.remove(location1.name);
                 }).then(() =>
                 {
-                    return expect(get("locations")).to.eventually.be.null;
+                    return expect(db.locations.get(location1.name)).to.eventually.be.null;
                 });
             });
 
@@ -421,11 +265,8 @@ describe("Database Collections", function()
             it("should insert a given release into the 'releases' collection", function()
             {
                 return db.releases.insert(release1.number, release1.client, release1.containerType, release1.quantity, release1.acceptanceDate, release1.cutoffDate, release1.from, release1.to).then(() =>
-                {
-                    return get("releases", {number: release1.number});
-                }).then((res) =>
                 {            
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(release1));
+                    return expect(get("releases", {number: release1.number})).to.eventually.eql(JSON.stringify(release1));
                 });
             });
 
@@ -487,208 +328,6 @@ describe("Database Collections", function()
                 {
                     return expect(db.releases.insert(release1.number, release1.client, release1.containerType, release1.quantity, release1.acceptanceDate, release1.cutoffDate, release1.from, "Fake")).to.eventually.be.rejectedWith("Cannot find address 'Fake'");
                 });
-            });
-        });
-
-        describe("update()", function()
-        {
-            let updateValue;
-            let updatedEntry;
-            const location3 = {
-                name: "Some Place",
-                address: "640 Great South Rd, Manukau, Auckland",
-                type: "Port",
-                openingTime: "07:45",
-                closingTime: "21:30",
-                requiresBooking: false
-            };
-
-            before(function()
-            {
-                return insertAll({locations: [location1, location2, location3]});
-            });
-
-            beforeEach(function()
-            {
-                updatedEntry = Object.assign({}, release1);
-                return remove("releases").then(() => insertAll({releases: [release1, release2]}));
-            });
-
-            after(function()
-            {
-                return removeAll(["locations", "releases"]);
-            });
-
-            it("should update an entry with the given number", () =>
-            {
-                updateValue = "test";
-                updatedEntry.number = updateValue;
-
-                return db.releases.update(release1.number, {number: updateValue}).then(() =>
-                {
-                    return get("releases", {number: updateValue});
-                }).then((res) =>
-                {
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(updatedEntry));
-                });
-            });
-
-            it("should throw an error if the release has the same number as another entry", function()
-            {
-                return expect(db.locations.update(location1.name, {name: location2.name})).to.eventually.be.rejectedWith("locations already contains entry '" + location2.name + "'");
-            });
-
-            it("should update an entry with the given client", function()
-            {
-                updateValue = "test";
-                updatedEntry.client = updateValue;
-
-                return db.releases.update(release1.number, {client: updateValue}).then(() => get("releases", {number: release1.number})).then((res) =>
-                {
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(updatedEntry));
-                });
-            });
-
-            it("should update an entry with the given quantity", function()
-            {
-                updateValue = release2.quantity;
-                updatedEntry.quantity = updateValue;
-
-                return db.releases.update(release1.number, {quantity: updateValue}).then(() => get("releases", {number: release1.number})).then((res) =>
-                {
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(updatedEntry));
-                });
-            });
-
-            it("should throw an error if the quantity is not a positive integer", function()
-            {
-                return expect(db.releases.update(release1.number, {quantity: -10})).to.eventually.be.rejectedWith("Quantity '-10' must be a positive integer").then(() =>
-                {
-                    return expect(db.releases.update(release1.number, {quantity: 25.6})).to.eventually.be.rejectedWith("Quantity '25.6' must be a positive integer");
-                }).then(() =>
-                {
-                    return expect(db.releases.update(release1.number, {quantity: "quantity"})).to.eventually.be.rejectedWith("Quantity 'quantity' must be a positive integer");
-                });
-            });
-
-            it("should update an entry with the given container type", function()
-            {
-                updateValue = db.ContainerTypeEnum.forty;
-                updatedEntry.containerType = updateValue;
-
-                return db.releases.update(release1.number, {containerType: updateValue}).then(() => get("releases", {number: release1.number})).then((res) =>
-                {
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(updatedEntry));
-                });
-            });
-
-            it("should throw an error if the container type is not '40ft' or '60ft'", function()
-            {
-                return expect(db.releases.update(release1.number, {containerType: "50ft"})).to.eventually.be.rejectedWith("Container type '50ft' is not a valid type");
-            });
-
-            it("should update an entry with the given acceptance date", function()
-            {
-                updateValue = release2.acceptanceDate;
-                updatedEntry.acceptanceDate = updateValue;
-
-                return db.releases.update(release1.number, {acceptanceDate: updateValue}).then(() => get("releases", {number: release1.number})).then((res) =>
-                {
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(updatedEntry));
-                });
-            });
-
-            it("should throw an error if the acceptance date is not before the cutoff date", function()
-            {
-                return expect(db.releases.update(release1.number, {acceptanceDate: release1.cutoffDate})).to.eventually.be.rejectedWith("Acceptance date '" + util.parseDateString(release1.cutoffDate) + "' is after or on cut-off '" + util.parseDateString(release1.cutoffDate) + "'").then(() =>
-                {
-                    return expect(db.releases.update(release1.number, {cutoffDate: release1.acceptanceDate})).to.eventually.be.rejectedWith("Acceptance date '" + util.parseDateString(release1.acceptanceDate) + "' is after or on cut-off '" + util.parseDateString(release1.acceptanceDate) + "'");
-                }).then(() =>
-                {
-                    return expect(db.releases.update(release1.number, {acceptanceDate: release2.cutoffDate, cutoffDate: release2.acceptanceDate})).to.eventually.be.rejectedWith("Acceptance date '" + util.parseDateString(release2.cutoffDate) + "' is after or on cut-off '" + util.parseDateString(release2.acceptanceDate) + "'");
-                });
-            });
-
-            it("should update an entry with the given cut-off date", function()
-            {
-                updateValue = release2.cutoffDate;
-                updatedEntry.cutoffDate = updateValue;
-
-                return db.releases.update(release1.number, {cutoffDate: updateValue}).then(() => get("releases", {number: release1.number})).then((res) =>
-                {
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(updatedEntry));
-                });
-            });
-
-            it("should throw an error if a date is not a Date object", function()
-            {
-                return expect(db.releases.update(release1.number, {acceptanceDate: "35/6/2018"})).to.eventually.be.rejectedWith("'35/6/2018' is not a valid date").then(() =>
-                {
-                    return expect(db.releases.update(release1.number, {cutoffDate: 28})).to.eventually.be.rejectedWith("'28' is not a valid date");
-                });
-            });
-
-            it("should throw an error if the acceptance date is not before the cutoff date", function()
-            {
-                return expect(db.releases.update(release1.number, {acceptanceDate: release1.cutoffDate})).to.eventually.be.rejectedWith("Acceptance date '" + util.parseDateString(release1.cutoffDate) + "' is after or on cut-off '" + util.parseDateString(release1.cutoffDate) + "'").then(() =>
-                {
-                    return expect(db.releases.update(release1.number, {cutoffDate: release1.acceptanceDate})).to.eventually.be.rejectedWith("Acceptance date '" + util.parseDateString(release1.acceptanceDate) + "' is after or on cut-off '" + util.parseDateString(release1.acceptanceDate) + "'");
-                }).then(() =>
-                {
-                    return expect(db.releases.update(release1.number, {acceptanceDate: release2.cutoffDate, cutoffDate: release2.acceptanceDate})).to.eventually.be.rejectedWith("Acceptance date '" + util.parseDateString(release2.cutoffDate) + "' is after or on cut-off '" + util.parseDateString(release2.acceptanceDate) + "'");
-                });
-            });
-
-            it("should update an entry with the given start location", function()
-            {
-                updateValue = location3.name;
-                updatedEntry.from = updateValue;
-
-                return db.releases.update(release1.number, {from: updateValue}).then(() => get("releases", {number: release1.number})).then((res) =>
-                {
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(updatedEntry));
-                });
-            });
-
-            it("should update an entry with the given end location", function()
-            {
-                updateValue = location3.name;
-                updatedEntry.to = updateValue;
-
-                return db.releases.update(release1.number, {to: updateValue}).then(() => get("releases", {number: release1.number})).then((res) =>
-                {
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(updatedEntry));
-                });
-            });
-
-            it("should throw an error if the update will result in identical addresses", function()
-            {
-                return expect(db.releases.update(release1.number, {from: release1.to})).to.eventually.be.rejectedWith("Start and end location are identical").then(() =>
-                {
-                    return expect(db.releases.update(release1.number, {to: release1.from})).to.eventually.be.rejectedWith("Start and end location are identical");
-                }).then(() =>
-                {
-                    return expect(db.releases.update(release1.number, {from: release2.from, to: release2.from})).to.eventually.be.rejectedWith("Start and end location are identical");
-                });
-            });
-
-            it("should throw an error if a location is not stored in the database", function()
-            {
-                return expect(db.releases.update(release1.number, {from: "Invalid"})).to.eventually.be.rejectedWith("Cannot find address 'Invalid'").then(() =>
-                {
-                    return expect(db.releases.update(release1.number, {to: "Invalid"})).to.eventually.be.rejectedWith("Cannot find address 'Invalid'")  
-                });
-
-            });
-
-            it("should throw an error if the name does not correspond to an entry", function()
-            {
-                return expect(db.releases.update("Invalid", {number: "Test", containerType: db.ContainerTypeEnum.forty})).to.eventually.be.rejectedWith("No entry 'Invalid' found");
-            });
-
-            it("should throw an error if an invalid property is passed", function()
-            {
-                return expect(db.releases.update(release1.number, {test: "test"})).to.eventually.be.rejectedWith("'test' is not a valid property");
             });
         });
 
@@ -797,9 +436,9 @@ describe("Database Collections", function()
 
             it("should insert a given truck into the 'trucks' collection", function()
             {
-                return db.trucks.insert(entry1.name, entry1.type).then(() => get("trucks")).then((res) =>
+                return db.trucks.insert(entry1.name, entry1.type).then(() =>
                 {
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(entry1));
+                    return expect(get("trucks")).to.eventually.eql(JSON.stringify(entry1));
                 });
             });
 
@@ -814,71 +453,6 @@ describe("Database Collections", function()
             it("should throw an error if the truck type is not 'Tribox' or 'Skeletal'", function()
             {
                 return expect(db.trucks.insert(entry1.name, "invalid type")).to.eventually.be.rejectedWith("Truck type 'invalid type' is not a valid type");
-            });
-        });
-
-        describe("update()", function()
-        {
-            let updateValue;
-            let updatedEntry;
-
-            beforeEach(function()
-            {
-                updatedEntry = Object.assign({}, entry1);
-                return remove("trucks").then(() => insertAll({trucks: [entry1, entry2]}));
-            });
-
-            after(function()
-            {
-                return remove("trucks");
-            });
-
-            it("should update the name with the given input", function()
-            {
-                updateValue = "test";
-                updatedEntry.name = updateValue;
-
-                return db.trucks.update(entry1.name, {name: updateValue}).then(() =>
-                {
-                    return get("trucks", {name: updateValue});
-                }).then((res) =>
-                {
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(updatedEntry));
-                });
-            });
-
-            it("should throw an error if the name already exists", function()
-            {
-                return expect(db.trucks.update(entry1.name, {name: entry2.name})).to.eventually.be.rejectedWith("trucks already contains entry")
-            });
-
-            it("should update the type with the given input", function()
-            {
-                updateValue = db.TruckTypeEnum.skeletal;
-                updatedEntry.type = updateValue;
-
-                return db.trucks.update(entry1.name, {type: updateValue}).then(() =>
-                {
-                    return get("trucks", {name: entry1.name});
-                }).then((res) =>
-                {
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(updatedEntry));
-                });
-            });
-
-            it("should throw an error if the type is invalid", function()
-            {
-                return expect(db.trucks.update(entry1.name, {type: "Invalid"})).to.eventually.be.rejectedWith("Truck type 'Invalid' is not a valid type");
-            });
-
-            it("should throw an error if the entry does not exist", function()
-            {
-                return expect(db.trucks.update("Invalid", {name: "Test", type: "tribox"})).to.eventually.be.rejectedWith("No entry 'Invalid' found");
-            });
-
-            it("should throw an error if an invalid property is passed", function()
-            {
-                return expect(db.trucks.update(entry1.name, {test: "test"})).to.eventually.be.rejectedWith("'test' is not a valid property");
             });
         });
 
@@ -997,5 +571,5 @@ async function get(collection, query = {})
     let res = await testdb.collection(collection).findOne(query, {_id: 0});
     if(!res) return null;
     delete res._id;
-    return res;
+    return JSON.stringify(res);
 }

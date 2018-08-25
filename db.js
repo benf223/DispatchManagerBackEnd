@@ -102,7 +102,7 @@ const locations = {
         if(!address) throw new Error("An address must be supplied");
 
         // Validate address
-        if(!(await je.validateAddress(address))) throw new Error("Address '" + address + "' not found");
+        if(!(await je.validateAddress(address))) throw new Error("Address not found");
 
         // Validate location type
         try
@@ -153,49 +153,6 @@ const locations = {
     },
     update: async (name, query) =>
     {
-		for(p in query)
-		{
-			let value = query[p];
-			switch(p)
-			{
-				case "name":
-					if(await contains("locations", {name: query[p]})) throw new Error("locations already contains entry '" + query[p] + "'");
-					break;
-				case "address":
-					if(await contains("locations", {address: query[p]})) throw new Error("locations already contains entry with address '" + query[p] + "'");
-					if(!(await je.validateAddress(query[p]))) throw new Error("Address '" + query[p] + "' not found");
-					break;
-				case "type":
-					try
-					{
-						if(typeof query[p] == "string") value = LocationTypeEnum.parse(query[p]);
-						else if(!isValidEnum(query[p], LocationTypeEnum)) throw new Error();
-					}
-					catch(err)
-					{
-						throw new Error("Location type '" + query[p] + "' is not a valid type");
-					}
-					break;
-				case "openingTime":
-					query[p] = util.parseTimeOfDay(query[p]);
-
-					// Checks new opening time is before new or current closing time
-					let closingTime = query["closingTime"] ? util.parseTimeOfDay(query["closingTime"]) : (await locations.get(name)).closingTime;
-					if(!util.timeOfDayIsBefore(query[p], closingTime)) throw new Error("Opening time must be before closing time");
-					break;
-				case "closingTime":
-					query[p] = util.parseTimeOfDay(query[p]);
-
-					// Checks new closing time is after new or current opening time
-					let openingTime = query["openingTime"] ? query["openingTime"] : (await locations.get(name)).openingTime;
-					if(!util.timeOfDayIsBefore(openingTime, query[p])) throw new Error("Closing time must be after opening time");
-					break;
-				case "requiresBooking": break;
-				default:
-					throw new Error("'" + p + "' is not a valid property");
-			}
-		}
-
         return await update("locations", {name: name}, query);        
     },
     remove: async (name) =>
@@ -246,28 +203,6 @@ const trucks = {
     },
     update: async (name, query) =>
     {
-		for(p in query)
-		{
-			switch(p)
-			{
-				case "name":
-					if(await contains("trucks", {name: query[p]})) throw new Error("trucks already contains entry");
-					break;
-				case "type":
-					try
-					{
-						if(typeof query[p] == "string") query[p] = TruckTypeEnum.parse(query[p]);
-						else if(!isValidEnum(query[p], TruckTypeEnum)) throw new Error();
-					}
-					catch(err)
-					{
-						throw new Error("Truck type '" + query[p] + "' is not a valid type");
-					}
-					break;
-				default:
-					throw new Error("'" + p + "' is not a valid property");
-			}
-		}
         return await update("trucks", {name: name}, query);
     },
     remove: async (name) =>
@@ -344,54 +279,6 @@ const releases = {
     },
     update: async (number, query) =>
     {
-		for(p in query)
-		{
-			switch(p)
-			{
-				case "number":
-					if(await contains("releases", {name: query[p]})) throw new Error("releases already contains entry '" + p[query] + "'");
-					break;
-				case "quantity":
-					if(!Number.isInteger(query[p]) || query[p] <= 0) throw new Error("Quantity '" + query[p] + "' must be a positive integer");
-					break;
-				case "containerType":
-					try
-					{
-						if(typeof query[p] == "string") query[p] = ContainerTypeEnum.parse(query[p]);
-						else if(!isValidEnum(query[p], TruckTypeEnum)) throw new Error();
-					}
-					catch(err)
-					{
-						throw new Error("Container type '" + query[p] + "' is not a valid type");
-					}
-					break;
-				case "acceptanceDate":
-					if(!(query[p] instanceof Date)) throw new Error("'" + query[p] + "' is not a valid date");
-					let cutoff = query.cutoffDate ? query.cutoffDate : (await releases.get(number)).cutoffDate;
-					if(!(cutoff instanceof Date)) throw new Error("'" + cutoff + "' is not a valid date");
-					if(cutoff.getTime() <= query[p].getTime()) throw new Error("Acceptance date '" + util.parseDateString(query[p]) + "' is after or on cut-off '" + util.parseDateString(cutoff) + "'");
-					break;
-				case "cutoffDate":
-					// If query contains acceptance date, cut-off is already validated
-					if(!query.acceptanceDate)
-					{
-						if(!(query[p] instanceof Date)) throw new Error("'" + query[p] + "' is not a valid date");
-						let acceptanceDate = (await releases.get(number)).acceptanceDate;
-						if(query[p].getTime() <= acceptanceDate.getTime()) throw new Error("Acceptance date '" + util.parseDateString(acceptanceDate) + "' is after or on cut-off '" + util.parseDateString(query[p]) + "'");
-					}
-					break;
-				case "from":
-					if(!(await contains("locations", {name: query[p]}))) throw new Error("Cannot find address '" + query[p] + "'");
-					let to = query.to ? query.to : (await get("releases", {number: number})).to;
-					if(query[p] == to) throw new Error("Start and end location are identical");
-				case "to":
-					if(!(await contains("locations", {name: query[p]}))) throw new Error("Cannot find address '" + query[p] + "'");
-					if(!query.from && query[p] == (await get("releases", {number: number})).from) throw new Error("Start and end location are identical");
-				case "client": break;
-				default:
-					throw new Error("'" + p + "' is not a valid property");
-			}
-		}
         return await update("releases", {number: number}, query);
     },
     remove: async (number) =>
@@ -1206,7 +1093,7 @@ const rounds = {
  */
 async function start(path = PATH)
 {
-    return await MongoClient.connect(path).then(async (val) =>
+    return await MongoClient.connect(PATH).then(async (val) =>
     {
         mongod = val;
 		db = val.db();
@@ -1246,21 +1133,15 @@ async function getAll(collection)
 
 async function update(collection, identifierQuery, updateQuery)
 {
-	return await db.collection(collection).findOneAndUpdate(identifierQuery, {$set: updateQuery}, {returnNewDocument: true}).then((res) =>
-	{
-		// Entry was not found
-		if(!res.value) throw new Error("No entry '" + util.getFirstProperty(identifierQuery) + "' found");
-		return res.value;
-	});
+    return await db.collection(collection).updateOne(identifierQuery, updateQuery);
 }
 
 async function remove(collection, query)
 {
-	return await db.collection(collection).findOneAndDelete(query).then((res) =>
+	if((await db.collection(collection).remove(query, {justOne: true})).result.n === 0)
 	{
-		if(!res.value) throw new Error("No entry '" + util.getFirstProperty(query) + "' found");
-		return res.value;
-	});
+		throw new Error("No entry '" + util.getFirstProperty(query) + "' found");
+	}
 }
 
 /**
@@ -1295,7 +1176,7 @@ async function contains(collection, query)
 {
     return await db.collection(collection).findOne(query).then((val) =>
     {
-        return val != null;
+        return val ? true : false;
 	});
 }
 
