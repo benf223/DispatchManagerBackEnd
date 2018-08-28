@@ -66,7 +66,7 @@ after(function()
 
 describe("Database Collections", function()
 {
-    this.timeout(10000);
+    //this.timeout(3000);
 
     describe("locations", function()
     {

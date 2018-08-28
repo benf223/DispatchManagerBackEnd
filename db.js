@@ -3,7 +3,7 @@
  * 
  * Interface enabling access and manipulation of database.
  * 
- * Database actions include find() insert(), update() or remove() for each collection
+ * Database actions include get(), getAll(), insert(), update() or remove() for each collection
  * e.g. locations.insert(), releases.remove()
  */
 
@@ -20,13 +20,6 @@ const LocationTypeEnum = {
     port: 1,
     rail: 2,
     parse: (s) => parseEnum(s, LocationTypeEnum),
-    toString: (e) => getEnumString(e, this)
-}
-
-const ContainerTypeEnum = {
-    twenty: 0,
-    forty: 1,
-    parse: (s) => parseEnum(s, ContainerTypeEnum),
     toString: (e) => getEnumString(e, this)
 }
 
@@ -72,28 +65,24 @@ function isValidEnum(e, type)
     return typeof Object.keys(type)[e] != "undefined";
 }
 
-const drivers = {
-    insert: async (name, availableDays, avoidLocations) =>
-    {
-        return await insert("drivers", null, {name : name, availableDays : availableDays, avoidLocations : avoidLocations});
-    },
-    update: async (name, query) =>
-    {
-        return await update("drivers", {name: name}, query);
-    },
-    remove: async (name) =>
-    {
-        return await remove("drivers", {name: name});
-    }
-};
-
+/**
+ * Location that containers are delivered to/from
+ * 
+ * Properties:
+ * 	{string} name: name of location, must be unique
+ * 	{string} address: Location's address, must be unique, must be an address tracked by the Google Maps API
+ * 	{string | number} type: Type of location, must be a value of LocationTypeEnum or its name as a string ('Yard', 'Port', 'Rail')
+ * 	{string} [openingTime]: Time of day when location is opened, in 24 hour format 'hh:mm'
+ * 	{string} [closingTime]: Time of day when location is closed, in 24 hour format 'hh:mm'
+ * 	{boolean} [requiresBooking]: Whether or not a booking must be made before containers are moved.
+ */
 const locations = {
     /**
      * @param {string} name
-     * @param {(string | number)} type: type of yard as a LocationTypeEnum or name of enum as a string
-     * @param {string} openingTime: 24 hour format hh:mm
-     * @param {string} closingTime: 24 hour format hh:mm
-     * @param {boolean} requiresBooking
+     * @param {(string | number)} type
+     * @param {string} [openingTime]
+     * @param {string} [closingTime]
+     * @param {boolean} [requiresBooking]
      */
     insert: async (name, address, type = "Yard", openingTime = null, closingTime = null, requiresBooking = false) =>
     {
@@ -150,21 +139,34 @@ const locations = {
         }
     
         return await insert("locations", containsQuery, entry);
-    },
+	},
+	/**
+	 * @param {string} name
+	 * @param {Object} query
+	 * @param {string} [query.name]
+	 * @param {string} [query.address]
+	 * @param {string | number} [query.type]
+	 * @param {string} [query.openingTime]
+	 * @param {string} [query.closingTime]
+	 * @param {boolean} [query.requiresBooking]
+	 */
     update: async (name, query) =>
     {
+		// Validate each passed property
 		for(p in query)
 		{
-			let value = query[p];
 			switch(p)
 			{
+				// Check name is not already stored in database
 				case "name":
 					if(await contains("locations", {name: query[p]})) throw new Error("locations already contains entry '" + query[p] + "'");
 					break;
+				// Check address is not already stored in database and is tracked by the Distance Matrix API
 				case "address":
 					if(await contains("locations", {address: query[p]})) throw new Error("locations already contains entry with address '" + query[p] + "'");
 					if(!(await je.validateAddress(query[p]))) throw new Error("Address '" + query[p] + "' not found");
 					break;
+				// Check valid type is passed
 				case "type":
 					try
 					{
@@ -176,33 +178,36 @@ const locations = {
 						throw new Error("Location type '" + query[p] + "' is not a valid type");
 					}
 					break;
+				// Parses and validates times
 				case "openingTime":
 					query[p] = util.parseTimeOfDay(query[p]);
+					if(query.closingTime) query.closingTime = util.parseTimeOfDay(query.closingTime);
 
 					// Checks new opening time is before new or current closing time
-					let closingTime = query["closingTime"] ? util.parseTimeOfDay(query["closingTime"]) : (await locations.get(name)).closingTime;
-					if(!util.timeOfDayIsBefore(query[p], closingTime)) throw new Error("Opening time must be before closing time");
+					if(!util.timeOfDayIsBefore(query[p], query.closingTime || (await locations.get(name)).closingTime)) throw new Error("Opening time must be before closing time");
 					break;
 				case "closingTime":
 					query[p] = util.parseTimeOfDay(query[p]);
 
-					// Checks new closing time is after new or current opening time
-					let openingTime = query["openingTime"] ? query["openingTime"] : (await locations.get(name)).openingTime;
-					if(!util.timeOfDayIsBefore(openingTime, query[p])) throw new Error("Closing time must be after opening time");
+					// Checks new closing time is after new or current opening time if opening time not updated
+					if(!query.openingTime && !util.timeOfDayIsBefore((await locations.get(name)).openingTime, query[p]))
 					break;
 				case "requiresBooking": break;
+				// Invalid property passed
 				default:
 					throw new Error("'" + p + "' is not a valid property");
 			}
 		}
 
         return await update("locations", {name: name}, query);        
-    },
+	},
+	/**
+	 * @param {string} name
+	 */
     remove: async (name) =>
     {
-		let dependent = await get("releases", {$or: [{ from: name }, { from: name }]});
-
-		if(dependent)
+		// If release exists that uses this location
+		if(await get("releases", {$or: [{ from: name }, { from: name }]}))
 		{
 			throw new Error("Release '" + dependent.number + "' depends on entry '" + name + "'");
 		}
@@ -221,10 +226,17 @@ const locations = {
     }
 };
 
+/**
+ * Trucks used for making deliveries
+ * 
+ * Properties:
+ * 	{string} name: name of truck, must be unique
+ * 	{string | number} type: Type of truck, must be a value of TruckTypeEnum or its name as a string
+ */
 const trucks = {
     /**
      * @param {string} name
-     * @param {(string | number)} type: type of truck as a TruckTypeEnum or name of enum as a string
+     * @param {(string | number)} type
      */
     insert: async (name, type) =>
     {
@@ -243,16 +255,25 @@ const trucks = {
         }
 
         return await insert("trucks", {name: name}, {name: name, type: type});
-    },
+	},
+	/**
+	 * @param {string} name
+	 * @param {Object} query
+	 * @param {string} [query.name]
+	 * @param {string | number} [query.type]
+	 */
     update: async (name, query) =>
     {
+		// Validate each passed property
 		for(p in query)
 		{
 			switch(p)
 			{
+				// Check name does not already exist in collection
 				case "name":
 					if(await contains("trucks", {name: query[p]})) throw new Error("trucks already contains entry");
 					break;
+				// Check type is valid
 				case "type":
 					try
 					{
@@ -264,16 +285,23 @@ const trucks = {
 						throw new Error("Truck type '" + query[p] + "' is not a valid type");
 					}
 					break;
+				// Invalid property passed
 				default:
 					throw new Error("'" + p + "' is not a valid property");
 			}
 		}
         return await update("trucks", {name: name}, query);
-    },
+	},
+	/**
+	 * @param {string} name
+	 */
     remove: async (name) =>
     {
         return await remove("trucks", {name: name});
-    },
+	},
+	/**
+	 * @param {string} name
+	 */
     get: async (name) =>
     {
         return await get("trucks", {name: name});
@@ -284,13 +312,25 @@ const trucks = {
     }
 };
 
+/**
+ * Orders for container deliveries received by clients
+ * 
+ * Properties:
+ * 	{string} number: ID of release, must be unique
+ * 	{string} client: Name of client
+ * 	{number} quantity20ft: Number of 20ft containers to be delivered, must be integer >= 0
+ * 	{number} quantity40ft: Number of 40ft containers to be delivered, must be integer >= 0, both quantities cannot be 0
+ * 	{Date} acceptanceDate: Date client will begin to accept deliveries
+ * 	{Date} cutoffDate: Date deliveries must be completed by
+ * 	{string} from: Location containers will be retrieved from, must correspond to name in 'locations' collection
+ * 	{string} from: Location containers will be delivered to, must correspond to name in 'locations' collection
+ */
 const releases = {
-    // To do: Find out format of release number
     /**
      * @param {string} number
      * @param {string} client
-     * @param {(string | number)} type: type of container as a ContainerTypeEnum or name of enum as a string
-     * @param {number} quantity: positive integer
+	 * @param {number} quantity20ft
+	 * @param {number} quantity40ft
      * @param {Date} acceptanceDate
      * @param {Date} cutoffDate
      * @param {string} from: must match location name from database
@@ -334,16 +374,31 @@ const releases = {
             to: to
         }
         return await insert("releases", {number: number}, entry);
-    },
+	},
+	/**
+	 * @param {string} number
+	 * @param {Object} query
+	 * @param {string} [query.number]
+	 * @param {string} [query.client]
+	 * @param {number} [query.quantity20ft]
+	 * @param {number} [query.quantity40ft]
+	 * @param {Date} [query.acceptanceDate]
+	 * @param {Date} [query.cutoffDate]
+	 * @param {string} [query.from]
+	 * @param {string} [query.to]
+	 */
     update: async (number, query) =>
     {
+		// Validate passed properties
 		for(p in query)
 		{
 			switch(p)
 			{
+				// Check number does not exist in collection
 				case "number":
 					if(await contains("releases", {name: query[p]})) throw new Error("releases already contains entry '" + p[query] + "'");
 					break;
+				// For both quantities, check that they are zero or positive integers and both are not zero
 				case "quantity20ft":
 					if(!Number.isInteger(query[p]) || query[p] < 0) throw new Error("20ft container quantity '" + query[p] + "' must be a positive integer");
 					if(!query[p] && (query.quantity40ft == 0 || (await releases.get(number)).quantity40ft == 0)) throw new Error("At least one quantity must be positive");
@@ -352,6 +407,7 @@ const releases = {
 					if(!Number.isInteger(query[p]) || query[p] < 0) throw new Error("40ft container quantity '" + query[p] + "' must be a positive integer");
 					if(!query[p] && (query.quantity20ft == 0 || (await releases.get(number)).quantity20ft == 0)) throw new Error("At least one quantity must be positive");
 					break;
+				// Validate dates
 				case "acceptanceDate":
 					if(!(query[p] instanceof Date)) throw new Error("'" + query[p] + "' is not a valid date");
 					let cutoff = query.cutoffDate || (await releases.get(number)).cutoffDate;
@@ -367,6 +423,7 @@ const releases = {
 						if(query[p].getTime() <= acceptanceDate.getTime()) throw new Error("Acceptance date '" + util.parseDateString(acceptanceDate) + "' is after or on cut-off '" + util.parseDateString(query[p]) + "'");
 					}
 					break;
+				// Checks addresses are in database and are not the same
 				case "from":
 					if(!(await contains("locations", {name: query[p]}))) throw new Error("Cannot find address '" + query[p] + "'");
 					let to = query.to || (await get("releases", {number: number})).to;
@@ -375,16 +432,23 @@ const releases = {
 					if(!(await contains("locations", {name: query[p]}))) throw new Error("Cannot find address '" + query[p] + "'");
 					if(!query.from && query[p] == (await get("releases", {number: number})).from) throw new Error("Start and end location are identical");
 				case "client": break;
+				// Invalid property passed
 				default:
 					throw new Error("'" + p + "' is not a valid property");
 			}
 		}
         return await update("releases", {number: number}, query);
-    },
+	},
+	/**
+	 * @param {string} number
+	 */
     remove: async (number) =>
     {
         return await remove("releases", {number: number});
-    },
+	},
+	/**
+	 * @param {string} number
+	 */
 	get: async (number) =>
 	{
 		/*if (name === 'full') {
