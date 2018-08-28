@@ -32,8 +32,8 @@ const location2 = {
 const release1 = {
     number: "123456",
     client: "abc inc.",
-    containerType: db.ContainerTypeEnum.twenty,
-    quantity: 50,
+    quantity20ft: 15,
+    quantity40ft: 0,
     acceptanceDate: util.createDate(1, 2, 2018),
     cutoffDate: util.createDate(15, 3, 2018),
     from: location1.name,
@@ -43,8 +43,8 @@ const release1 = {
 const release2 = {
     number: 789123,
     client: "def inc.",
-    containerType: db.ContainerTypeEnum.forty,
-    quantity: 35,
+    quantity20ft: 25,
+    quantity40ft: 10,
     acceptanceDate: util.createDate(2, 3, 2018),
     cutoffDate: util.createDate(1, 4, 2018),
     from: location2.name,
@@ -420,7 +420,7 @@ describe("Database Collections", function()
 
             it("should insert a given release into the 'releases' collection", function()
             {
-                return db.releases.insert(release1.number, release1.client, release1.containerType, release1.quantity, release1.acceptanceDate, release1.cutoffDate, release1.from, release1.to).then(() =>
+                return db.releases.insert(release1.number, release1.client, release1.quantity20ft, release1.quantity40ft, release1.acceptanceDate, release1.cutoffDate, release1.from, release1.to).then(() =>
                 {
                     return get("releases", {number: release1.number});
                 }).then((res) =>
@@ -438,7 +438,7 @@ describe("Database Collections", function()
             {
                 return insert("releases", release1).then(() =>
                 {
-                    return expect(db.releases.insert(release1.number, release2.client, release2.containerType, release2.quantity, release2.acceptanceDate, release2.cutoffDate, release2.from, release2.to)).to.eventually.be.rejectedWith("releases already contains entry");
+                    return expect(db.releases.insert(release1.number, release2.client, release2.quantity20ft, release2.quantity40ft, release2.acceptanceDate, release2.cutoffDate, release2.from, release2.to)).to.eventually.be.rejectedWith("releases already contains entry");
                 });
             });
 
@@ -447,45 +447,45 @@ describe("Database Collections", function()
                 return expect(db.releases.insert(release1.number)).to.eventually.be.rejectedWith("A client is required");
             });
 
-            it("should throw an error if the quantity is not a positive integer", function()
+            it("should throw an error if either quantity is not zero or a positive integer", function()
             {
-                return expect(db.releases.insert(release1.number, release1.client, release1.containerType, -10, release1.acceptanceDate, release1.cutoffDate, release1.from, release1.to)).to.eventually.be.rejectedWith("Quantity '-10' must be a positive integer").then(() =>
+                return expect(db.releases.insert(release1.number, release1.client, -10, release1.quantity40ft, release1.acceptanceDate, release1.cutoffDate, release1.from, release1.to)).to.eventually.be.rejectedWith("20ft container quantity '-10' must be zero or a positive integer").then(() =>
                 {
-                    return expect(db.releases.insert(release1.number, release1.client, release1.containerType, 25.6, release1.acceptanceDate, release1.cutoffDate, release1.from, release1.to)).to.eventually.be.rejectedWith("Quantity '25.6' must be a positive integer");
+                    return expect(db.releases.insert(release1.number, release1.client, release1.quantity20ft, 25.6, release1.acceptanceDate, release1.cutoffDate, release1.from, release1.to)).to.eventually.be.rejectedWith("40ft container quantity '25.6' must be zero or a positive integer");
                 }).then(() =>
                 {
-                    return expect(db.releases.insert(release1.number, release1.client, release1.containerType, "quantity", release1.acceptanceDate, release1.cutoffDate, release1.from, release1.to)).to.eventually.be.rejectedWith("Quantity 'quantity' must be a positive integer");
+                    return expect(db.releases.insert(release1.number, release1.client, release1.quantity20ft, "quantity", release1.acceptanceDate, release1.cutoffDate, release1.from, release1.to)).to.eventually.be.rejectedWith("40ft container quantity 'quantity' must be zero or a positive integer");
                 });
             });
 
-            it("should throw an error if the container type is not '40ft' or '60ft'", function()
+            it("should throw an error if both quantities are 0", function()
             {
-                return expect(db.releases.insert(release1.number, release1.client, "50ft", release1.quantity, release1.acceptanceDate, release1.cutoffDate, release1.from, release1.to)).to.eventually.be.rejectedWith("Container type '50ft' is not a valid type");
+                return expect(db.releases.insert(release1.number, release1.client, 0, 0, release1.acceptanceDate, release1.cutoffDate, release1.from, release1.to)).to.eventually.be.rejectedWith("At least one quantity must be positive");
             });
 
             it("should throw an error if a date is not a Date object", function()
             {
-                return expect(db.releases.insert(release1.number, release1.client, release1.containerType, release1.quantity, "35/6/2018", release1.cutoffDate, release1.from, release1.to)).to.eventually.be.rejectedWith("'35/6/2018' is not a valid date").then(() =>
+                return expect(db.releases.insert(release1.number, release1.client, release1.quantity20ft, release1.quantity40ft, "35/6/2018", release1.cutoffDate, release1.from, release1.to)).to.eventually.be.rejectedWith("'35/6/2018' is not a valid date").then(() =>
                 {
-                    return expect(db.releases.insert(release1.number, release1.client, release1.containerType, release1.quantity, release1.acceptanceDate, 28, release1.from, release1.to)).to.eventually.be.rejectedWith("'28' is not a valid date");
+                    return expect(db.releases.insert(release1.number, release1.client, release1.quantity20ft, release1.quantity40ft, release1.acceptanceDate, 28, release1.from, release1.to)).to.eventually.be.rejectedWith("'28' is not a valid date");
                 });
             });
 
             it("should throw an error if the acceptance date is not before the cutoff date", function()
             {
-                return expect(db.releases.insert(release1.number, release1.client, release1.containerType, release1.quantity, release1.cutoffDate, release1.acceptanceDate, release1.from, release1.to)).to.eventually.be.rejectedWith("Cutoff '1/2/2018' is before acceptance date '15/3/2018'");
+                return expect(db.releases.insert(release1.number, release1.client, release1.quantity20ft, release1.quantity40ft, release1.cutoffDate, release1.acceptanceDate, release1.from, release1.to)).to.eventually.be.rejectedWith("Cutoff '1/2/2018' is before acceptance date '15/3/2018'");
             });
 
             it("should throw an error if both addresses are the same", function()
             {
-                return expect(db.releases.insert(release1.number, release1.client, release1.containerType, release1.quantity, release1.acceptanceDate, release1.cutoffDate, release1.from, release1.from)).to.eventually.be.rejectedWith("Source and destination addresses are identical");
+                return expect(db.releases.insert(release1.number, release1.client, release1.quantity20ft, release1.quantity40ft, release1.acceptanceDate, release1.cutoffDate, release1.from, release1.from)).to.eventually.be.rejectedWith("Source and destination addresses are identical");
             });
 
             it("should throw an error if either address is not stored in the database", function()
             {
-                return expect(db.releases.insert(release1.number, release1.client, release1.containerType, release1.quantity, release1.acceptanceDate, release1.cutoffDate, "Invalid", release1.to)).to.eventually.be.rejectedWith("Cannot find address 'Invalid'").then(() =>
+                return expect(db.releases.insert(release1.number, release1.client, release1.quantity20ft, release1.quantity40ft, release1.acceptanceDate, release1.cutoffDate, "Invalid", release1.to)).to.eventually.be.rejectedWith("Cannot find address 'Invalid'").then(() =>
                 {
-                    return expect(db.releases.insert(release1.number, release1.client, release1.containerType, release1.quantity, release1.acceptanceDate, release1.cutoffDate, release1.from, "Fake")).to.eventually.be.rejectedWith("Cannot find address 'Fake'");
+                    return expect(db.releases.insert(release1.number, release1.client, release1.quantity20ft, release1.quantity40ft, release1.acceptanceDate, release1.cutoffDate, release1.from, "Fake")).to.eventually.be.rejectedWith("Cannot find address 'Fake'");
                 });
             });
         });
@@ -549,42 +549,34 @@ describe("Database Collections", function()
                 });
             });
 
-            it("should update an entry with the given quantity", function()
+            it("should update an entry with the given 20ft container quantity", function()
             {
-                updateValue = release2.quantity;
-                updatedEntry.quantity = updateValue;
+                updateValue = release2.quantity20ft;
+                updatedEntry.quantity20ft = updateValue;
 
-                return db.releases.update(release1.number, {quantity: updateValue}).then(() => get("releases", {number: release1.number})).then((res) =>
+                return db.releases.update(release1.number, {quantity20ft: updateValue}).then(() => get("releases", {number: release1.number})).then((res) =>
                 {
                     return expect(JSON.stringify(res)).to.eql(JSON.stringify(updatedEntry));
                 });
             });
 
-            it("should throw an error if the quantity is not a positive integer", function()
+            it("should throw an error if either quantity is not zero or a positive integer", function()
             {
-                return expect(db.releases.update(release1.number, {quantity: -10})).to.eventually.be.rejectedWith("Quantity '-10' must be a positive integer").then(() =>
+                return expect(db.releases.update(release1.number, {quantity20ft: -10})).to.eventually.be.rejectedWith("20ft container quantity '-10' must be a positive integer").then(() =>
                 {
-                    return expect(db.releases.update(release1.number, {quantity: 25.6})).to.eventually.be.rejectedWith("Quantity '25.6' must be a positive integer");
+                    return expect(db.releases.update(release1.number, {quantity40ft: 25.6})).to.eventually.be.rejectedWith("40ft container quantity '25.6' must be a positive integer");
                 }).then(() =>
                 {
-                    return expect(db.releases.update(release1.number, {quantity: "quantity"})).to.eventually.be.rejectedWith("Quantity 'quantity' must be a positive integer");
+                    return expect(db.releases.update(release1.number, {quantity40ft: "quantity"})).to.eventually.be.rejectedWith("40ft container quantity 'quantity' must be a positive integer");
                 });
             });
 
-            it("should update an entry with the given container type", function()
+            it("should throw an error if both quantities are zero", function()
             {
-                updateValue = db.ContainerTypeEnum.forty;
-                updatedEntry.containerType = updateValue;
-
-                return db.releases.update(release1.number, {containerType: updateValue}).then(() => get("releases", {number: release1.number})).then((res) =>
+                return expect(db.releases.update(release1.number, {quantity20ft: 0})).to.eventually.be.rejectedWith("At least one quantity must be positive").then(() =>
                 {
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(updatedEntry));
+                    return expect(db.releases.update(release2.number, {quantity20ft: 0, quantity40ft: 0})).to.eventually.be.rejectedWith("At least one quantity must be positive");
                 });
-            });
-
-            it("should throw an error if the container type is not '40ft' or '60ft'", function()
-            {
-                return expect(db.releases.update(release1.number, {containerType: "50ft"})).to.eventually.be.rejectedWith("Container type '50ft' is not a valid type");
             });
 
             it("should update an entry with the given acceptance date", function()
@@ -683,7 +675,7 @@ describe("Database Collections", function()
 
             it("should throw an error if the name does not correspond to an entry", function()
             {
-                return expect(db.releases.update("Invalid", {number: "Test", containerType: db.ContainerTypeEnum.forty})).to.eventually.be.rejectedWith("No entry 'Invalid' found");
+                return expect(db.releases.update("Invalid", {number: "Test", quantity20ft: 20})).to.eventually.be.rejectedWith("No entry 'Invalid' found");
             });
 
             it("should throw an error if an invalid property is passed", function()

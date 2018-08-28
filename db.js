@@ -296,26 +296,19 @@ const releases = {
      * @param {string} from: must match location name from database
      * @param {string} to: must match location name from database
      */
-    insert: async (number, client, containerType, quantity, acceptanceDate, cutoffDate, from, to) =>
+    insert: async (number, client, quantity20ft, quantity40ft, acceptanceDate, cutoffDate, from, to) =>
     {
         // Check required arguments
         if(!number) throw new Error("A release number is required");
         if(!client) throw new Error("A client is required");
 
-        // Check quantity is positive integer
-        if(!Number.isInteger(quantity) || quantity <= 0) throw new Error("Quantity '" + quantity + "' must be a positive integer");
-        
-        // Validate container type
-        try
-        {
-            if(typeof containerType == "string") containerType = ContainerTypeEnum.parse(containerType);
-            else if(!isValidEnum(containerType, ContainerTypeEnum)) throw new Error();
-        }
-        catch(err)
-        {
-            throw new Error("Container type '" + containerType + "' is not a valid type");
-        }
+		// Checks quantities are positive integers
+		if(!Number.isInteger(quantity20ft) || quantity20ft < 0) throw new Error("20ft container quantity '" + quantity20ft + "' must be zero or a positive integer");
+		if(!Number.isInteger(quantity40ft) || quantity40ft < 0) throw new Error("40ft container quantity '" + quantity40ft + "' must be zero or a positive integer");
 
+		// Checks that both properties are not undefined/0
+		if(!quantity20ft && !quantity40ft) throw new Error("At least one quantity must be positive");
+		
         // Validate dates
         if(!(acceptanceDate instanceof Date)) throw new Error("'" + acceptanceDate + "' is not a valid date");
         if(!(cutoffDate instanceof Date)) throw new Error("'" + cutoffDate + "' is not a valid date");
@@ -333,8 +326,8 @@ const releases = {
         let entry = {
             number: number,
             client: client,
-            containerType: containerType,
-            quantity: quantity,
+			quantity20ft: quantity20ft,
+			quantity40ft: quantity40ft,
             acceptanceDate: acceptanceDate,
             cutoffDate: cutoffDate,
             from: from,
@@ -351,23 +344,17 @@ const releases = {
 				case "number":
 					if(await contains("releases", {name: query[p]})) throw new Error("releases already contains entry '" + p[query] + "'");
 					break;
-				case "quantity":
-					if(!Number.isInteger(query[p]) || query[p] <= 0) throw new Error("Quantity '" + query[p] + "' must be a positive integer");
+				case "quantity20ft":
+					if(!Number.isInteger(query[p]) || query[p] < 0) throw new Error("20ft container quantity '" + query[p] + "' must be a positive integer");
+					if(!query[p] && (query.quantity40ft == 0 || (await releases.get(number)).quantity40ft == 0)) throw new Error("At least one quantity must be positive");
 					break;
-				case "containerType":
-					try
-					{
-						if(typeof query[p] == "string") query[p] = ContainerTypeEnum.parse(query[p]);
-						else if(!isValidEnum(query[p], TruckTypeEnum)) throw new Error();
-					}
-					catch(err)
-					{
-						throw new Error("Container type '" + query[p] + "' is not a valid type");
-					}
+				case "quantity40ft":
+					if(!Number.isInteger(query[p]) || query[p] < 0) throw new Error("40ft container quantity '" + query[p] + "' must be a positive integer");
+					if(!query[p] && (query.quantity20ft == 0 || (await releases.get(number)).quantity20ft == 0)) throw new Error("At least one quantity must be positive");
 					break;
 				case "acceptanceDate":
 					if(!(query[p] instanceof Date)) throw new Error("'" + query[p] + "' is not a valid date");
-					let cutoff = query.cutoffDate ? query.cutoffDate : (await releases.get(number)).cutoffDate;
+					let cutoff = query.cutoffDate || (await releases.get(number)).cutoffDate;
 					if(!(cutoff instanceof Date)) throw new Error("'" + cutoff + "' is not a valid date");
 					if(cutoff.getTime() <= query[p].getTime()) throw new Error("Acceptance date '" + util.parseDateString(query[p]) + "' is after or on cut-off '" + util.parseDateString(cutoff) + "'");
 					break;
@@ -382,7 +369,7 @@ const releases = {
 					break;
 				case "from":
 					if(!(await contains("locations", {name: query[p]}))) throw new Error("Cannot find address '" + query[p] + "'");
-					let to = query.to ? query.to : (await get("releases", {number: number})).to;
+					let to = query.to || (await get("releases", {number: number})).to;
 					if(query[p] == to) throw new Error("Start and end location are identical");
 				case "to":
 					if(!(await contains("locations", {name: query[p]}))) throw new Error("Cannot find address '" + query[p] + "'");
