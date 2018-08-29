@@ -38,7 +38,6 @@ api.get('/releases/:date', (req, res) => {
 
 // Retrieves all the full releases?
 api.get('/full_releases', (req, res) => {
-
 	// Should retrieve all releases that were started within the past 30 days?
 	dbHelper.releases.get('fuller', null).then((result) => {
 		res.send(result);
@@ -61,8 +60,39 @@ api.post('/update_rounds', (req, res) => {
 	res.sendStatus(200);
 });
 
+// Gets a Change object from the frontend and will update the database with the new information
+// This will have side effects consider having two separate tables for releases
+// ie: Full Releases and the Data that is being sent to the frontend for the planning sheet
+// This would also improve the other aspects of the backend assuming it can keep itself maintained well enough
+api.post('/update_release', (req, res) => {
+	console.log(req.body);
+
+	if (req.body.increase1) {
+		console.log(`Increase ${req.body.increase1.release}`);
+		dbHelper.releases.update(null, null);
+	}
+
+	if (req.body.increase2) {
+		console.log(`Increase ${req.body.increase2.release}`);
+		dbHelper.releases.update(null, null);
+	}
+
+	if (req.body.decrease1) {
+		console.log(`Decrease ${req.body.decrease1.release}`);
+		dbHelper.releases.update(null, null);
+	}
+
+	if (req.body.decrease2) {
+		console.log(`Decrease ${req.body.decrease2.release}`);
+		dbHelper.releases.update(null, null);
+	}
+
+	res.sendStatus(200);
+})
+
 auth.post('/test', (req, res) => {
 	console.log(req.body);
+	res.sendStatus(200);
 });
 
 app.use('/api', api);
