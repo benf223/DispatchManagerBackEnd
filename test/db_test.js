@@ -9,6 +9,9 @@ const util = require("../util");
 const expect = chai.expect;
 const testDBPath = "mongodb://localhost/recur-test-db";
 
+const bcrypt = require("bcrypt");
+const SALT_WORK_FACTOR = 10;
+
 let testdb = null;
 
 const location1 = {
@@ -68,6 +71,224 @@ describe("Database Collections", function()
 {
     //this.timeout(3000);
 
+    describe("users", function()
+    {
+        const user1 = {
+            username: "JohnDoe",
+            password: "password"
+        }
+
+        const user2 = {
+            username: "user123",
+            password: "123456"
+        }
+
+        describe("insert()", function()
+        {
+            beforeEach(function()
+            {
+                return remove("users");
+            });
+
+            after(function()
+            {
+                return remove("users");
+            });
+
+            it("should insert a given user with an encrypted password into the 'users' collection", () =>
+            {
+                return db.users.insert(user1.username, user1.password).then(() => get("users", {username: user1.username})).then((res) =>
+                {       
+                    expect(res.username).to.eql(user1.username);
+                    return expect(bcrypt.compareSync(user1.password, res.password)).to.be.true;
+                });
+            });
+
+            it("should throw an error if the user has the same username as another entry", function()
+            {
+                return insert("users", {username: user1.username, password: user1.password}).then(() =>
+                {
+                    return expect(db.users.insert(user1.username, user2.password)).to.eventually.be.rejectedWith("users already contains entry");
+                });
+            });
+        });
+
+        describe("update()", function()
+        {
+            let updateValue;
+            let updatedEntry;
+
+            beforeEach(function()
+            {
+                updatedEntry = Object.assign({}, user1);
+                return remove("users").then(() => db.users.insert(user1.username, user1.password)).then(() => db.users.insert(user2.username, user2.password));
+            });
+
+            after(function()
+            {
+                return remove("users");
+            });
+
+            it("should update the username with the given input", function()
+            {
+                updateValue = "test";
+                updatedEntry.username = updateValue;
+
+                return db.users.update(user1.username, {username: updateValue}).then(() =>
+                {
+                    return get("users", {username: updateValue});
+                }).then((res) =>
+                {
+                    expect(res.username).to.eql(updatedEntry.username);
+                    return expect(bcrypt.compareSync(updatedEntry.password, res.password)).to.be.true;
+                });
+            });
+
+            it("should throw an error if the username already exists", function()
+            {
+                return expect(db.users.update(user1.username, {username: user2.username})).to.eventually.be.rejectedWith("users already contains entry")
+            });
+
+            it("should update the password with the given input", function()
+            {
+                updateValue = "AnotherPassword";
+                updatedEntry.password = updateValue;
+
+                return db.users.update(user1.username, {password: updateValue}).then(() =>
+                {
+                    return get("users", {username: user1.username});
+                }).then((res) =>
+                {
+                    expect(res.username).to.eql(updatedEntry.username);
+                    return expect(bcrypt.compareSync(updatedEntry.password, res.password)).to.be.true;
+                });
+            });
+
+            it("should throw an error if the entry does not exist", function()
+            {
+                return expect(db.users.update("Invalid", {username: "Test", password: "something"})).to.eventually.be.rejectedWith("No entry 'Invalid' found");
+            });
+
+            it("should throw an error if an invalid property is passed", function()
+            {
+                return expect(db.users.update(user1.username, {test: "test"})).to.eventually.be.rejectedWith("'test' is not a valid property");
+            });
+        });
+
+        describe("remove()", function()
+        {
+            beforeEach(function()
+            {
+                return remove("users").then(() => db.users.insert(user1.username, user1.password));
+            });
+
+            after(function()
+            {
+                return remove("users");
+            });
+
+            it("should remove an entry with the corresponding username from the table", function()
+            {
+                return db.users.remove(user1.username).then(() =>
+                {
+                    return expect(get("users")).to.eventually.be.null;
+                });
+            });
+
+            it("should throw an error if the name does not exist in the table", function()
+            {
+                return expect(db.users.remove(user2.username)).to.eventually.be.rejectedWith("No entry '" + user2.username + "' found");
+            });
+        });
+
+        describe("get()", function()
+        {
+            before(function()
+            {
+                return remove("users").then(() =>
+                {
+                    return db.users.insert(user1.username, user1.password);
+                });
+            });
+
+            after(function()
+            {
+                return remove("users");
+            });
+
+            it("should return a single entry corresponding to the passed username", function()
+            {
+                return db.users.get(user1.username).then((res) =>
+                {
+                    expect(res.username).to.eql(user1.username);
+                    return expect(bcrypt.compareSync(user1.password, res.password)).to.be.true;
+                });
+            });
+
+            it("should return null if an entry cannot be found", function()
+            {
+                return expect(db.users.get("Hello")).to.eventually.be.null;
+            });
+        });
+
+        describe("validateAndGet()", function()
+        {
+            before(function()
+            {
+                return db.users.insert(user1.username, user1.password);
+            });
+
+            after(function()
+            {
+                return remove("users");
+            });
+
+            it("should return the user if the password matches the corresponding user's password", function()
+            {
+                return db.users.validateAndGet(user1.username, user1.password).then((res) =>
+                {
+                    expect(res.username).to.eql(user1.username);
+                    return expect(bcrypt.compareSync(user1.password, res.password)).to.be.true;
+                });
+            });
+
+            it("should throw an error if the password does not match the corresponding user's password", function()
+            {
+                return expect(db.users.validateAndGet(user1.username, "Wrong")).to.eventually.be.rejectedWith("Password does not match");
+            });
+
+            it("should throw an error if the user does not exist", function()
+            {
+                return expect(db.users.validateAndGet("Random", user1.password)).to.eventually.be.rejectedWith("No user 'Random' exists");
+            });
+        });
+
+        describe("getAll()", function()
+        {
+            before(function()
+            {
+                return db.users.insert(user1.username, user1.password).then(() => db.users.insert(user2.username, user2.password));
+            });
+
+            after(function()
+            {
+                return remove("users");
+            });
+
+            it("should return all entries in the collection", function()
+            {
+                return db.users.getAll().then((res) =>
+                {
+                    expect(res[0].username).to.eql(user1.username);
+                    expect(bcrypt.compareSync(user1.password, res[0].password)).to.be.true;
+
+                    expect(res[1].username).to.eql(user2.username);
+                    expect(bcrypt.compareSync(user2.password, res[1].password)).to.be.true;
+                });
+            });
+        });
+    });
+
     describe("locations", function()
     {
         describe("insert()", function()
@@ -84,7 +305,7 @@ describe("Database Collections", function()
 
             it("should insert a given location into the 'locations' collection", () =>
             {
-                return insert("locations", location1).then(() => get("locations", {name: location1.name})).then((res) =>
+                return db.locations.insert(location1.name, location1.address, location1.type, location1.openingTime, location1.closingTime, location1.requiresBooking).then(() => get("locations", {name: location1.name})).then((res) =>
                 {       
                     return expect(JSON.stringify(res)).to.eql(JSON.stringify(location1));     
                 });

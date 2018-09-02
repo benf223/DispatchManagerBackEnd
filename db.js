@@ -11,6 +11,9 @@ const MongoClient = require("mongodb").MongoClient;
 const util = require("./util");
 const je = require("./journeyEstimator");
 const PATH = "mongodb://admin:recurdbadmin1@ds221242.mlab.com:21242/demo-recur-db";
+const bcrypt = require("bcrypt");
+const SALT_WORK_FACTOR = 10;
+const chilkat = require("chilkat_node10_win32");
 
 var mongod = null;
 var db = null;
@@ -63,6 +66,57 @@ function parseEnum(s, type)
 function isValidEnum(e, type)
 {
     return typeof Object.keys(type)[e] != "undefined";
+}
+
+const users = {
+	insert: async (username, password) =>
+	{
+		password = await bcrypt.hash(password, await bcrypt.genSalt(SALT_WORK_FACTOR));
+		return await insert("users", {username: username}, {username: username, password: password});
+	},
+
+	update: async (username, query) =>
+	{
+		for(p in query)
+		{
+			switch(p)
+			{
+				case "username":
+					if(await contains("users", {username: query[p]})) throw new Error("users already contains entry");
+					break;
+				case "password": 
+					query[p] = encrypt(query[p]);
+					break;
+				default:
+					throw new Error("'" + p + "' is not a valid property");
+			}
+		}
+
+		return await update("users", {username: username}, query);
+	},
+
+	remove: async (username) =>
+	{
+		return await remove("users", {username: username});
+	},
+
+	get: async (username) =>
+	{
+		return await get("users", {username: username});
+	},
+
+	validateAndGet: async (username, password) =>
+	{
+		let user = await users.get(username);
+		if(!user) throw new Error("No user '" + username + "' exists");
+		if(!bcrypt.compareSync(password, user.password)) throw new Error("Password does not match");
+		return user;
+	},
+
+	getAll: async () =>
+	{
+		return await getAll("users");
+	}
 }
 
 /**
@@ -190,7 +244,7 @@ const locations = {
 					query[p] = util.parseTimeOfDay(query[p]);
 
 					// Checks new closing time is after new or current opening time if opening time not updated
-					if(!query.openingTime && !util.timeOfDayIsBefore((await locations.get(name)).openingTime, query[p]))
+					if(!query.openingTime && !util.timeOfDayIsBefore((await locations.get(name)).openingTime, query[p])) throw new Error("Closing time must be after opening time");
 					break;
 				case "requiresBooking": break;
 				// Invalid property passed
@@ -207,7 +261,8 @@ const locations = {
     remove: async (name) =>
     {
 		// If release exists that uses this location
-		if(await get("releases", {$or: [{ from: name }, { from: name }]}))
+		let dependent = await get("releases", {$or: [{ from: name }, { from: name }]});
+		if(dependent)
 		{
 			throw new Error("Release '" + dependent.number + "' depends on entry '" + name + "'");
 		}
@@ -1350,13 +1405,18 @@ async function contains(collection, query)
 	});
 }
 
+function encrypt(str)
+{
+	return bcrypt.hashSync(str, bcrypt.genSaltSync(SALT_WORK_FACTOR));
+}
+
 function getDB()
 {
     return db;
 }
 
 module.exports = {
-    drivers,
+    users,
     locations,
     releases,
     trucks,
@@ -1364,7 +1424,6 @@ module.exports = {
     close,
     getDB,
     LocationTypeEnum,
-    ContainerTypeEnum,
     TruckTypeEnum,
     rounds,
 };
