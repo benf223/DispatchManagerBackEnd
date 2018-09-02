@@ -13,7 +13,6 @@ const je = require("./journeyEstimator");
 const PATH = "mongodb://admin:recurdbadmin1@ds221242.mlab.com:21242/demo-recur-db";
 const bcrypt = require("bcrypt");
 const SALT_WORK_FACTOR = 10;
-const chilkat = require("chilkat_node10_win32");
 
 var mongod = null;
 var db = null;
