@@ -114,45 +114,11 @@ const trucks = {
 	}
 };
 
+// TODO this needs to accept a truncated version of the Full Release eg: what is in the get section
 const releases = {
-	// To do: Find out format of release number
 	insert: async (number, client, containerType, quantity, acceptanceDate, cutoffDate, from, to) =>
 	{
-		// Check required arguments
-		if (!number) throw new Error("A release number is required");
-		if (!client) throw new Error("A client is required");
-
-		// Check quantity is positive integer
-		if (!Number.isInteger(quantity) || quantity <= 0) throw new Error("Quantity '" + quantity + "' must be a positive integer");
-
-		// Validate container type
-		if (!CONTAINER_TYPES.includes(containerType)) throw new Error("Container type '" + containerType + "' is not a valid type");
-
-		// Validate dates
-		if (!(acceptanceDate instanceof Date)) throw new Error("'" + acceptanceDate + "' is not a valid date");
-		if (!(cutoffDate instanceof Date)) throw new Error("'" + cutoffDate + "' is not a valid date");
-
-		// Check acceptance date is before cutoff
-		if (cutoffDate.getTime() <= acceptanceDate.getTime()) throw new Error("Cutoff '" + util.parseDateString(cutoffDate) + "' is before acceptance date '" + util.parseDateString(acceptanceDate) + "'");
-
-		//Check addresses are different
-		if (from == to) throw new Error("Source and destination addresses are identical");
-
-		// Check address are in database
-		if (!(await contains("locations", {name: from}))) throw new Error("Cannot find address '" + from + "'");
-		if (!(await contains("locations", {name: to}))) throw new Error("Cannot find address '" + to + "'");
-
-		let entry = {
-			number: number,
-			client: client,
-			containerType: containerType,
-			quantity: quantity,
-			acceptanceDate: acceptanceDate,
-			cutoffDate: cutoffDate,
-			from: from,
-			to: to
-		}
-		return await insert("releases", {number: number}, entry);
+		return await insert("releases", {number: number});
 	},
 	update: async (name, query) =>
 	{
@@ -162,38 +128,9 @@ const releases = {
 	{
 		return await remove("releases", {name: name});
 	},
-	get: async (type, date) =>
+	get: async (date) =>
 	{
-		if (type === 'full')
-		{
-			// This needs to better evaluate the date and the release type
-			return {
-				release: 'a',
-				qtyForty: 20,
-				qtyTwenty: 10,
-				colour: '#F8BBA7'
-			}
-		}
-		else if (type === 'fuller')
-		{
-			return [{
-				release: 'a',
-				qtyForty: 20,
-				qtyTwenty: 10,
-				colour: '#F8BBA7'
-			}, {
-				release: 'b',
-				qtyForty: 33,
-				qtyTwenty: 20,
-				colour: '33BB9C'
-			}, {
-				release: 'c',
-				qtyForty: 17,
-				qtyTwenty: 99,
-				colour: 'FF0066'
-			}]
-		}
-
+		// Returns the truncated version of the releases for the frontend
 		return {
 			releases: [
 				{release: '1', qty: 2, size: 40, colour: '#FF0000'},
@@ -208,6 +145,55 @@ const releases = {
 			]
 		};
 		// return get("locations", {name: name});
+	},
+};
+
+// TODO this needs to accept the form data from the frontend
+const fullReleases = {
+	insert: async (number, client, containerType, quantity, acceptanceDate, cutoffDate, from, to) =>
+	{
+		return await insert("fullReleases", {number: number});
+	},
+	update: async (name, query) =>
+	{
+		return await update("fullReleases", {name: name}, query);
+	},
+	remove: async (name) =>
+	{
+		return await remove("fullReleases", {name: name});
+	},
+	get: async (select, date) =>
+	{
+		// if (type === 'full')
+		// {
+		// 	// This needs to better evaluate the date and the release type
+		// 	return {
+		// 		release: 'a',
+		// 		qtyForty: 20,
+		// 		qtyTwenty: 10,
+		// 		colour: '#F8BBA7'
+		// 	}
+		// }
+		// else if (type === 'fuller')
+		// {
+		// 	return [{
+		// 		release: 'a',
+		// 		qtyForty: 20,
+		// 		qtyTwenty: 10,
+		// 		colour: '#F8BBA7'
+		// 	}, {
+		// 		release: 'b',
+		// 		qtyForty: 33,
+		// 		qtyTwenty: 20,
+		// 		colour: '33BB9C'
+		// 	}, {
+		// 		release: 'c',
+		// 		qtyForty: 17,
+		// 		qtyTwenty: 99,
+		// 		colour: 'FF0066'
+		// 	}]
+		// }
+		// return get("fullReleases", {name: name});
 	},
 };
 
@@ -229,14 +215,16 @@ const rounds = {
 		// Query the database for the current dates version of this data
 		// Date in for DD-MM-YYYY??
 
-		// If there is no data in the database return this and insert it into the collection
+		// If there is no data in the database for that day return this and insert it into the collection
 
 		let slots = [{release: null}, {release: null}, {release: null}];
 
 		let rounds = [];
+		// Assumes 5 trucks
 		for (let x = 1; x < 6; ++x) {
 			let round = [];
 
+			// Assumes 8 rounds
 			for (let y = 1; y < 9; ++y)
 			{
 				round.push({roundNumber: y, slots: slots});
@@ -245,7 +233,6 @@ const rounds = {
 			let truck = {id: 'truck' + x, dayRounds: round, nightRounds: round};
 			rounds.push(truck);
 		}
-
 
 		return rounds;
 
@@ -1106,6 +1093,7 @@ module.exports = {
 	drivers,
 	locations,
 	releases,
+	fullReleases,
 	rounds,
 	DB_NAME,
 	LOCATION_TYPES
