@@ -8,6 +8,7 @@ app.use(bodyParser.json());
 app.use((req, res, next) => {
 	res.header("Access-Control-Allow-Origin", "*");
 	res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+	res.header("Access-Control-Allow-Methods", "GET, POST, DELETE");
 	next();
 });
 
@@ -90,6 +91,12 @@ api.post('/update_release', (req, res) => {
 // Adds a new release to the FullReleases collection and then adds a truncated version to the Releases collection
 api.post('/add_release', (req, res) => {
 	console.log(req.body);
+	res.sendStatus(200);
+});
+
+// Need to find and remove the release based on it's ID as given
+api.delete('/delete_release/:release', (req, res) => {
+	console.log(req.params.release);
 	res.sendStatus(200);
 });
 
