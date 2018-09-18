@@ -57,35 +57,36 @@ api.get('/full_releases/:releaseID', (req, res) => {
 
 // Gets a TruckRounds object from the frontend and will update the database with the new information
 api.post('/update_rounds', (req, res) => {
+	console.log('jdiosa');
 	console.log(req.body);
-	res.sendStatus(200);
+	res.send({result: 200});
 });
 
 // Gets a Change object from the frontend and will update the truncated version of the releases in the database with the new information
 api.post('/update_release', (req, res) => {
 	console.log(req.body);
 
-	if (req.body.increase1) {
-		console.log(`Increase ${req.body.increase1.release}`);
-		dbHelper.releases.update(null, null);
-	}
+	// if (req.body.increase1) {
+	// 	console.log(`Increase ${req.body.increase1.release}`);
+	// 	dbHelper.releases.update(null, null);
+	// }
+	//
+	// if (req.body.increase2) {
+	// 	console.log(`Increase ${req.body.increase2.release}`);
+	// 	dbHelper.releases.update(null, null);
+	// }
+	//
+	// if (req.body.decrease1) {
+	// 	console.log(`Decrease ${req.body.decrease1.release}`);
+	// 	dbHelper.releases.update(null, null);
+	// }
+	//
+	// if (req.body.decrease2) {
+	// 	console.log(`Decrease ${req.body.decrease2.release}`);
+	// 	dbHelper.releases.update(null, null);
+	// }
 
-	if (req.body.increase2) {
-		console.log(`Increase ${req.body.increase2.release}`);
-		dbHelper.releases.update(null, null);
-	}
-
-	if (req.body.decrease1) {
-		console.log(`Decrease ${req.body.decrease1.release}`);
-		dbHelper.releases.update(null, null);
-	}
-
-	if (req.body.decrease2) {
-		console.log(`Decrease ${req.body.decrease2.release}`);
-		dbHelper.releases.update(null, null);
-	}
-
-	res.sendStatus(200);
+	res.send({result: 200});
 });
 
 // Adds a new release to the FullReleases collection and then adds a truncated version to the Releases collection

@@ -162,8 +162,34 @@ const fullReleases = {
 	{
 		return await remove("fullReleases", {name: name});
 	},
-	get: async (select, date) =>
+	get: async (date, releaseID) =>
 	{
+		if (date && releaseID) {
+			return {
+						release: 'a',
+						qtyForty: 20,
+						qtyTwenty: 10,
+						colour: '#F8BBA7'
+					}
+		} else {
+			return [{
+						release: 'a',
+						qtyForty: 20,
+						qtyTwenty: 10,
+						colour: '#F8BBA7'
+					}, {
+						release: 'b',
+						qtyForty: 33,
+						qtyTwenty: 20,
+						colour: '33BB9C'
+					}, {
+						release: 'c',
+						qtyForty: 17,
+						qtyTwenty: 99,
+						colour: 'FF0066'
+					}]
+		}
+
 		// if (type === 'full')
 		// {
 		// 	// This needs to better evaluate the date and the release type
@@ -194,6 +220,8 @@ const fullReleases = {
 		// 	}]
 		// }
 		// return get("fullReleases", {name: name});
+
+
 	},
 };
 
