@@ -7,7 +7,7 @@ chai.use(require("chai-as-promised"));
 const db = require("../db");
 const util = require("../util");
 const expect = chai.expect;
-const testDBPath = "mongodb://localhost/recur-test-db";
+const testDBPath = "mongodb://admin:admin123@ds125892.mlab.com:25892/recur_test";
 
 const bcrypt = require("bcrypt");
 
@@ -68,7 +68,7 @@ after(function()
 
 describe.only("Database Collections", function()
 {
-    //this.timeout(3000);
+    this.timeout(3000);
 
     describe("truckRounds", function()
     {
