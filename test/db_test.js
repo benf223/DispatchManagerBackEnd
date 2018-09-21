@@ -10,7 +10,6 @@ const expect = chai.expect;
 const testDBPath = "mongodb://localhost/recur-test-db";
 
 const bcrypt = require("bcrypt");
-const SALT_WORK_FACTOR = 10;
 
 let testdb = null;
 
@@ -67,9 +66,109 @@ after(function()
     db.close();
 });
 
-describe("Database Collections", function()
+describe.only("Database Collections", function()
 {
     //this.timeout(3000);
+
+    describe("truckRounds", function()
+    {
+        const truckRounds1 = {
+            id: "12345",
+            dayRounds: [],
+            nightRounds: []
+        }
+
+        const truckRounds2 = {
+            id: "56789",
+            dayRounds: [],
+            nightRounds: []
+        }
+
+        describe("insert()", function()
+        {
+            before(function()
+            {
+                return insertAll({locations: [location1, location2], releases: [release1, release2]});
+            });
+
+            it("should insert a given set of truck rounds into the collection", function()
+            {
+                return db.truckRounds.insert(truckRounds1.id, truckRounds1.dayRounds, truckRounds1.nightRounds).then(() =>
+                {
+                    return get("truckRounds", {id: truckRounds1.id});
+                }).then((res) =>
+                {
+                    return expectStringified(res, truckRounds1);
+                });
+            });
+
+            it("should throw an error if the ID of the set of truck rounds already exists", function()
+            {
+                return insert("truckRounds", truckRounds2).then(() =>
+                {
+                    return expect(db.truckRounds.insert(truckRounds2.id, truckRounds1.dayRounds, truckRounds1.nightRounds)).to.eventually.be.rejectedWith("truckRounds already contains entry '" + truckRounds2.id + "'");
+                });
+            });
+        });
+
+        describe("update()", function()
+        {
+
+        });
+
+        describe("remove()", function()
+        {
+
+        });
+
+        describe("get()", function()
+        {
+            before(function()
+            {                
+                return remove("truckRounds").then(() => insertAll({truckRounds: [truckRounds1, truckRounds2]}));
+            });
+
+            after(function()
+            {
+                return remove("truckRounds");
+            });
+
+            it("should return a single entry corresponding to the passed ID", function()
+            {
+                return db.truckRounds.get(truckRounds1.id).then((res) =>
+                {
+                    return expectStringified(res, truckRounds1);
+                });
+            });
+
+            it("should return null if an entry cannot be found", function()
+            {
+                return expect(db.truckRounds.get("Hello")).to.eventually.be.null;
+            });
+        });
+
+        describe("getAll()", function()
+        {
+            before(function()
+            {                
+                return remove("truckRounds").then(() => insertAll({truckRounds: [truckRounds1, truckRounds2]}));
+            });
+
+            after(function()
+            {
+                return remove("truckRounds");
+            });
+
+            it("should return all entries in the collection", function()
+            {
+                return db.truckRounds.getAll().then((res) =>
+                {
+                    expectStringified(res[0], truckRounds1);
+                    return expectStringified(res[1], truckRounds2);
+                });
+            });
+        });
+    });
 
     describe("users", function()
     {
@@ -108,7 +207,7 @@ describe("Database Collections", function()
             {
                 return insert("users", {username: user1.username, password: user1.password}).then(() =>
                 {
-                    return expect(db.users.insert(user1.username, user2.password)).to.eventually.be.rejectedWith("users already contains entry");
+                    return expect(db.users.insert(user1.username, user2.password)).to.eventually.be.rejectedWith("users already contains entry '" + user1.username + "'");
                 });
             });
         });
@@ -146,7 +245,7 @@ describe("Database Collections", function()
 
             it("should throw an error if the username already exists", function()
             {
-                return expect(db.users.update(user1.username, {username: user2.username})).to.eventually.be.rejectedWith("users already contains entry")
+                return expect(db.users.update(user1.username, {username: user2.username})).to.eventually.be.rejectedWith("users already contains entry '" + user2.username + "'")
             });
 
             it("should update the password with the given input", function()
@@ -307,7 +406,7 @@ describe("Database Collections", function()
             {
                 return db.locations.insert(location1.name, location1.address, location1.type, location1.openingTime, location1.closingTime, location1.requiresBooking).then(() => get("locations", {name: location1.name})).then((res) =>
                 {       
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(location1));     
+                    return expectStringified(res, location1);
                 });
             });
 
@@ -402,7 +501,7 @@ describe("Database Collections", function()
                     return get("locations", {name: updateValue});
                 }).then((res) =>
                 {
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(updatedEntry));
+                    return expectStringified(res, updatedEntry);
                 });
             });
 
@@ -421,7 +520,7 @@ describe("Database Collections", function()
                     return get("locations", {name: location1.name});
                 }).then((res) =>
                 {
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(updatedEntry));
+                    return expectStringified(res, updatedEntry);
                 });
             });
 
@@ -445,7 +544,7 @@ describe("Database Collections", function()
                     return get("locations", {name: location1.name});
                 }).then((res) =>
                 {
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(updatedEntry));
+                    return expectStringified(res, updatedEntry);
                 });
             });
 
@@ -481,7 +580,7 @@ describe("Database Collections", function()
                     return get("locations", {name: location1.name});
                 }).then((res) =>
                 {
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(updatedEntry));
+                    return expectStringified(res, updatedEntry);
                 });
             });
 
@@ -514,7 +613,7 @@ describe("Database Collections", function()
                     return get("locations", {name: location1.name});
                 }).then((res) =>
                 {
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(updatedEntry));
+                    return expectStringified(res, updatedEntry);
                 });
             });
 
@@ -587,7 +686,7 @@ describe("Database Collections", function()
             {
                 return db.locations.get(location1.name).then((res) =>
                 {
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(location1));
+                    return expectStringified(res, location1);
                 });
             });
 
@@ -613,8 +712,8 @@ describe("Database Collections", function()
             {
                 return db.locations.getAll().then((res) =>
                 {
-                    expect(JSON.stringify(res[0])).to.eql(JSON.stringify(location1));
-                    return expect(JSON.stringify(res[1])).to.eql(JSON.stringify(location2));
+                    expectStringified(res[0], location1);
+                    return expectStringified(res[1], location2);
                 });
             });
         });
@@ -646,7 +745,7 @@ describe("Database Collections", function()
                     return get("releases", {number: release1.number});
                 }).then((res) =>
                 {            
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(release1));
+                    return expectStringified(res, release1);
                 });
             });
 
@@ -659,7 +758,7 @@ describe("Database Collections", function()
             {
                 return insert("releases", release1).then(() =>
                 {
-                    return expect(db.releases.insert(release1.number, release2.client, release2.quantity20ft, release2.quantity40ft, release2.acceptanceDate, release2.cutoffDate, release2.from, release2.to)).to.eventually.be.rejectedWith("releases already contains entry");
+                    return expect(db.releases.insert(release1.number, release2.client, release2.quantity20ft, release2.quantity40ft, release2.acceptanceDate, release2.cutoffDate, release2.from, release2.to)).to.eventually.be.rejectedWith("releases already contains entry '" + release1.number + "'");
                 });
             });
 
@@ -750,7 +849,7 @@ describe("Database Collections", function()
                     return get("releases", {number: updateValue});
                 }).then((res) =>
                 {
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(updatedEntry));
+                    return expectStringified(res, updatedEntry);
                 });
             });
 
@@ -766,7 +865,7 @@ describe("Database Collections", function()
 
                 return db.releases.update(release1.number, {client: updateValue}).then(() => get("releases", {number: release1.number})).then((res) =>
                 {
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(updatedEntry));
+                    return expectStringified(res, updatedEntry);
                 });
             });
 
@@ -777,7 +876,7 @@ describe("Database Collections", function()
 
                 return db.releases.update(release1.number, {quantity20ft: updateValue}).then(() => get("releases", {number: release1.number})).then((res) =>
                 {
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(updatedEntry));
+                    return expectStringified(res, updatedEntry);
                 });
             });
 
@@ -807,7 +906,7 @@ describe("Database Collections", function()
 
                 return db.releases.update(release1.number, {acceptanceDate: updateValue}).then(() => get("releases", {number: release1.number})).then((res) =>
                 {
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(updatedEntry));
+                    return expectStringified(res, updatedEntry);
                 });
             });
 
@@ -829,7 +928,7 @@ describe("Database Collections", function()
 
                 return db.releases.update(release1.number, {cutoffDate: updateValue}).then(() => get("releases", {number: release1.number})).then((res) =>
                 {
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(updatedEntry));
+                    return expectStringified(res, updatedEntry);
                 });
             });
 
@@ -859,7 +958,7 @@ describe("Database Collections", function()
 
                 return db.releases.update(release1.number, {from: updateValue}).then(() => get("releases", {number: release1.number})).then((res) =>
                 {
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(updatedEntry));
+                    return expectStringified(res, updatedEntry);
                 });
             });
 
@@ -870,7 +969,7 @@ describe("Database Collections", function()
 
                 return db.releases.update(release1.number, {to: updateValue}).then(() => get("releases", {number: release1.number})).then((res) =>
                 {
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(updatedEntry));
+                    return expectStringified(res, updatedEntry);
                 });
             });
 
@@ -948,7 +1047,7 @@ describe("Database Collections", function()
             {
                 return db.releases.get(release1.number).then((res) =>
                 {
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(release1));
+                    return expectStringified(res, release1);
                 });
             });
 
@@ -977,8 +1076,8 @@ describe("Database Collections", function()
             {
                 return db.releases.getAll().then((res) =>
                 {
-                    expect(JSON.stringify(res[0])).to.eql(JSON.stringify(release1));
-                    return expect(JSON.stringify(res[1])).to.eql(JSON.stringify(release2));
+                    expectStringified(res[0], release1);
+                    return expectStringified(res[1], release2);
                 });
             });
         });
@@ -1012,7 +1111,7 @@ describe("Database Collections", function()
             {
                 return db.trucks.insert(entry1.name, entry1.type).then(() => get("trucks")).then((res) =>
                 {
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(entry1));
+                    return expectStringified(res, entry1);
                 });
             });
 
@@ -1020,7 +1119,7 @@ describe("Database Collections", function()
             {
                 return db.trucks.insert(entry1.name, entry1.type).then(() =>
                 {
-                    return expect(db.trucks.insert(entry1.name, entry2.type)).to.eventually.be.rejectedWith("trucks already contains entry");
+                    return expect(db.trucks.insert(entry1.name, entry2.type)).to.eventually.be.rejectedWith("trucks already contains entry '" + entry1.name + "'");
                 });
             });
 
@@ -1056,13 +1155,13 @@ describe("Database Collections", function()
                     return get("trucks", {name: updateValue});
                 }).then((res) =>
                 {
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(updatedEntry));
+                    return expectStringified(res, updatedEntry);
                 });
             });
 
             it("should throw an error if the name already exists", function()
             {
-                return expect(db.trucks.update(entry1.name, {name: entry2.name})).to.eventually.be.rejectedWith("trucks already contains entry")
+                return expect(db.trucks.update(entry1.name, {name: entry2.name})).to.eventually.be.rejectedWith("trucks already contains entry '" + entry2.name + "'")
             });
 
             it("should update the type with the given input", function()
@@ -1075,7 +1174,7 @@ describe("Database Collections", function()
                     return get("trucks", {name: entry1.name});
                 }).then((res) =>
                 {
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(updatedEntry));
+                    return expectStringified(res, updatedEntry);
                 });
             });
 
@@ -1138,7 +1237,7 @@ describe("Database Collections", function()
             {
                 return db.trucks.get(entry1.name).then((res) =>
                 {
-                    return expect(JSON.stringify(res)).to.eql(JSON.stringify(entry1));
+                    return expectStringified(res, entry1);
                 });
             });
 
@@ -1167,8 +1266,8 @@ describe("Database Collections", function()
             {
                 return db.trucks.getAll().then((res) =>
                 {
-                    expect(JSON.stringify(res[0])).to.eql(JSON.stringify(entry1));
-                    return expect(JSON.stringify(res[1])).to.eql(JSON.stringify(entry2));
+                    expectStringified(res[0], entry1);
+                    return expectStringified(res[1], entry2);
                 });
             });
         });
@@ -1211,4 +1310,9 @@ async function get(collection, query = {})
     if(!res) return null;
     delete res._id;
     return res;
+}
+
+function expectStringified(actual, expected)
+{
+    return expect(JSON.stringify(actual)).to.eql(JSON.stringify(expected));
 }

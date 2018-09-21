@@ -10,10 +10,10 @@
 const MongoClient = require("mongodb").MongoClient;
 const util = require("./util");
 const je = require("./journeyEstimator");
-const PATH = "mongodb://admin:recurdbadmin1@ds221242.mlab.com:21242/demo-recur-db";
 const bcrypt = require("bcrypt");
+
+const PATH = "mongodb://admin:recurdbadmin1@ds221242.mlab.com:21242/demo-recur-db";
 const SALT_WORK_FACTOR = 10;
-const chilkat = require("chilkat_node10_win32");
 
 var mongod = null;
 var db = null;
@@ -68,6 +68,88 @@ function isValidEnum(e, type)
     return typeof Object.keys(type)[e] != "undefined";
 }
 
+const truckRounds = {
+	/**
+	 * @param {string} id
+	 * @param {Object[]} [dayRounds]
+	 * @param {number} dayRounds.roundNumber
+	 * @param {String[]} dayRounds.slots - Array of all associated release numbers 
+	 * @param {Object[]} [nightRounds]
+	 * @param {number} nightRounds.roundNumber
+	 * @param {String[]} nightRounds.slots - Array of all associated release numbers 
+	 */
+	insert: (id, dayRounds = [], nightRounds = []) =>
+	{
+		// Checks all releases exist in database
+		/*for(const d of dayRounds.concat(nightRounds))
+		{
+			for(const r of d.slots)
+			{
+				if(!contains("release", {number: r}))
+				{
+					throw new Error("Release '" + r + "' does not exist");
+				}
+			}
+		}*/
+		return insert("truckRounds", {id: id}, {id: id, dayRounds: dayRounds, nightRounds: nightRounds});
+	},
+
+	/**
+	 * @param {string} id
+	 * @param {string} dayOrNight - whether to add to day or night rounds, should be 'D' or 'N'
+	 */
+	addRelease: async (id, dayOrNight, roundNumber, releaseNumber) =>
+	{
+		if(dayOrNight !== "D" && dayOrNight !== "N") throw new Error("dayOrNight must be 'D' or 'N'");
+		if(!(await releases.contains(releaseNumber))) throw new Error("Release " + releaseNumber + " does not exist");
+		let t = await truckRounds.get(id);
+		let rounds = dayOrNight === "D" ? t.dayRounds : t.nightRounds;
+		let entry = rounds.find((s) => s.roundNumber === roundNumber);
+		if(!entry) throw new Error("No round number '" + roundNumber + "' exists");
+		return entry.push(releaseNumber);
+	},
+
+	removeRelease: async (id, dayOrNight, roundNumber, releaseNumber) =>
+	{
+		if(dayOrNight !== "D" && dayOrNight !== "N") throw new Error("dayOrNight must be 'D' or 'N'");
+		let t = await truckRounds.get(id);
+		let rounds = dayOrNight === "D" ? t.dayRounds : t.nightRounds;
+		let entry = rounds.find((s) => s.roundNumber === roundNumber);
+		if(!entry) throw new Error("No round number '" + roundNumber + "' exists");
+		
+	},
+
+	get: async (id) =>
+	{
+		return await get("truckRounds", {id: id});
+	},
+
+	getDayRounds: async (id) =>
+	{
+		return await truckRounds.get(id).dayRounds;
+	},
+
+	getNightRounds: async (id) =>
+	{
+		return await truckRounds.get(id).nightRounds;
+	},
+
+	cancelRound: async (id, dayOrNight, roundNumber, slotIndex) =>
+	{
+		if(dayOrNight !== "D" && dayOrNight !== "N") throw new Error("dayOrNight must be 'D' or 'N'");
+		let t = await truckRounds.get(id);
+		let rounds = dayOrNight === "D" ? t.dayRounds : t.nightRounds;
+		let entry = rounds.find((s) => s.roundNumber === roundNumber);
+		if(!entry) throw new Error("No round number '" + roundNumber + "' exists");
+		entry[slotIndex] = null;
+	},
+
+	getAll: async () =>
+	{
+		return await getAll("truckRounds");
+	}
+}
+
 const users = {
 	insert: async (username, password) =>
 	{
@@ -82,7 +164,7 @@ const users = {
 			switch(p)
 			{
 				case "username":
-					if(await contains("users", {username: query[p]})) throw new Error("users already contains entry");
+					if(await contains("users", {username: query[p]})) throw new Error("users already contains entry '" + query.username + "'");
 					break;
 				case "password": 
 					query[p] = encrypt(query[p]);
@@ -273,12 +355,16 @@ const locations = {
      */
     get: async (name) =>
     {
-        return get("locations", {name: name});
+        return await get("locations", {name: name});
     },
     getAll: async () =>
     {
-        return getAll("locations");
-    }
+        return await getAll("locations");
+	},
+	contains: async (name) =>
+	{
+		return await contains("locations", {name: name});
+	}
 };
 
 /**
@@ -326,7 +412,7 @@ const trucks = {
 			{
 				// Check name does not already exist in collection
 				case "name":
-					if(await contains("trucks", {name: query[p]})) throw new Error("trucks already contains entry");
+					if(await contains("trucks", {name: query[p]})) throw new Error("trucks already contains entry '" + query.name + "'");
 					break;
 				// Check type is valid
 				case "type":
@@ -529,6 +615,11 @@ const releases = {
 	getAll: async () =>
 	{
 		return await getAll("releases");
+	},
+
+	contains: async (number) =>
+	{
+		return await contains("releases", {number: number});
 	}
 };
 
@@ -1383,9 +1474,14 @@ async function insert(collection, containsQuery, value)
     // Checks entry does not already exist
     return await contains(collection, containsQuery).then(async (val) =>
     {
-        if(val) throw new Error(collection + " already contains entry");
+		if(val)
+		{
+			let prop = util.getFirstProperty(containsQuery);
+			prop = typeof(prop) === "object" ? "" : " '" + prop + "'";
+			throw new Error(collection + " already contains entry" + prop);
+		}
         return await db.collection(collection).insertOne(value);
-    }).then(async (val) =>
+    }).then((val) =>
     {
         return val.ops[0];
     });
@@ -1425,5 +1521,5 @@ module.exports = {
     getDB,
     LocationTypeEnum,
     TruckTypeEnum,
-    rounds,
+    truckRounds
 };
