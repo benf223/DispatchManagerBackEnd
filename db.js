@@ -405,7 +405,8 @@ const rounds = {
 
 		let rounds = [];
 		// Assumes 5 trucks
-		for (let x = 1; x < 6; ++x) {
+		for (let x = 1; x < 6; ++x)
+		{
 			let round = [];
 
 			// Assumes 8 rounds
@@ -1176,6 +1177,7 @@ const rounds = {
 		// 	];
 
 		// return get("rounds", {date: date})
+	}
 };
 
 /**
