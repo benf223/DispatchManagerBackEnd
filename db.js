@@ -2,11 +2,14 @@
  * Author: Neil Read
  *
  * Interface enabling access and manipulation of database.
+<<<<<<< HEAD
  *
  *
  * Before use, database must be started using start() and closed after use using close()
  *
  * Database actions include find() insert(), update() or remove() for each collection
+=======
+>>>>>>> neil-s3
  * e.g. locations.insert(), releases.remove()
  */
 
@@ -105,8 +108,11 @@ const locations = {
         if(!name) throw new Error("A name must be supplied");
         if(!address) throw new Error("An address must be supplied");
 
+<<<<<<< HEAD
 		// Validate address
 		if (!(await je.validateAddress(address))) throw new Error("Address not found");
+=======
+>>>>>>> neil-s3
 
         // Validate location type
         try
@@ -326,6 +332,7 @@ const fullReleases = {
 
 
 	},
+>>>>>>> neil-s3
 };
 
 const rounds = {
@@ -341,6 +348,7 @@ const rounds = {
 	{
 		return await null;
 	},
+<<<<<<< HEAD
 	get: async (date) =>
 	{
 		// Query the database for the current dates version of this data
@@ -1123,6 +1131,766 @@ const rounds = {
 		// 	];
 
 		// return get("rounds", {date: date})
+=======
+	get: async (name) =>
+	{
+		return {
+			rounds: [
+				{
+					id: 'truck1', dayRounds:
+						[
+							{
+								roundNumber: 1,
+								slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testday1a', size: 1, qty: 1, colour: '#00FF00'}
+										}, {
+										supports40: true,
+										release: {release: 'testday1b', size: 1, qty: 1, colour: '#FF0000'}
+									}, {
+										supports40: false,
+										release: {release: 'testday1c', size: 1, qty: 1, colour: '#0000FF'}
+									}
+									]
+							},
+							{
+								roundNumber: 2, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testday2a', size: 1, qty: 1, colour: '#FF0000'}
+										}, {
+										supports40: true,
+										release: {release: 'testday2b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testday2c', size: 1, qty: 1, colour: '#00FF00'}
+									}
+									]
+							},
+							{
+								roundNumber: 3, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testday3a', size: 1, qty: 1, colour: '#FF0000'}
+										}, {
+										supports40: true,
+										release: {release: 'testday3b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testday3c', size: 1, qty: 1, colour: '#FF0000'}
+									}
+									]
+							},
+							{
+								roundNumber: 4, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testday4a', size: 1, qty: 1, colour: '#00FF00'}
+										}, {
+										supports40: true,
+										release: {release: 'testday4b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testday4c', size: 1, qty: 1, colour: '#FF0000'}
+									}
+									]
+							},
+							{
+								roundNumber: 5, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testday5a', size: 1, qty: 1, colour: '#FF0000'}
+										}, {
+										supports40: true,
+										release: {release: 'testday5b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testday5c', size: 1, qty: 1, colour: '#00FF00'}
+									}
+									]
+							},
+							{
+								roundNumber: 6, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testday6a', size: 1, qty: 1, colour: '#FF0000'}
+										}, {
+										supports40: true,
+										release: {release: 'testday6b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testday6c', size: 1, qty: 1, colour: '#FF0000'}
+									}
+									]
+							},
+							{
+								roundNumber: 7, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testday7a', size: 1, qty: 1, colour: '#00FF00'}
+										}, {
+										supports40: true,
+										release: {release: 'testday7b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testday7c', size: 1, qty: 1, colour: '#FF0000'}
+									}
+									]
+							}
+							,
+							{
+								roundNumber: 7, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testday8a', size: 1, qty: 1, colour: '#FF0000'}
+										}, {
+										supports40: true,
+										release: {release: 'testday8b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testday8c', size: 1, qty: 1, colour: '#00FF00'}
+									}
+									]
+							}
+						],
+					nightRounds:
+						[
+							{
+								roundNumber: 1, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testnight1a', size: 1, qty: 1, colour: '#FF0000'}
+										}, {
+										supports40: true,
+										release: {release: 'testnight1b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testnight1c', size: 1, qty: 1, colour: '#FF0000'}
+									}
+									]
+							},
+							{
+								roundNumber: 2, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testnight2a', size: 1, qty: 1, colour: '#00FF00'}
+										}, {
+										supports40: true,
+										release: {release: 'testnight2b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testnight2c', size: 1, qty: 1, colour: '#FF0000'}
+									}
+									]
+							},
+							{
+								roundNumber: 3, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testnight3a', size: 1, qty: 1, colour: '#FF0000'}
+										}, {
+										supports40: true,
+										release: {release: 'testnight3b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testnight3c', size: 1, qty: 1, colour: '#00FF00'}
+									}
+									]
+							},
+							{
+								roundNumber: 4, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testnight4a', size: 1, qty: 1, colour: '#FF0000'}
+										}, {
+										supports40: true,
+										release: {release: 'testnight4b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testnight4c', size: 1, qty: 1, colour: '#FF0000'}
+									}
+									]
+							},
+							{
+								roundNumber: 5, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testnight5a', size: 1, qty: 1, colour: '#00FF00'}
+										}, {
+										supports40: true,
+										release: {release: 'testnight5b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testnight5c', size: 1, qty: 1, colour: '#FF0000'}
+									}
+									]
+							},
+							{
+								roundNumber: 6, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testnight6a', size: 1, qty: 1, colour: '#FF0000'}
+										}, {
+										supports40: true,
+										release: {release: 'testnight6b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testnight6c', size: 1, qty: 1, colour: '#00FF00'}
+									}
+									]
+							},
+							{
+								roundNumber: 7, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testnight7a', size: 1, qty: 1, colour: '#FF0000'}
+										}, {
+										supports40: true,
+										release: {release: 'testnight7b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testnight7c', size: 1, qty: 1, colour: '#FF0000'}
+									}
+									]
+							}
+							,
+							{
+								roundNumber: 7, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testnight8a', size: 1, qty: 1, colour: '#00FF00'}
+										}, {
+										supports40: true,
+										release: {release: 'testnight8b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testnight8c', size: 1, qty: 1, colour: '#FF0000'}
+									}
+									]
+							}
+						]
+				},
+				{
+					id: 'truck2', dayRounds:
+						[
+							{
+								roundNumber: 1, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testday1a', size: 1, qty: 1, colour: '#FF0000'}
+										}, {
+										supports40: true,
+										release: {release: 'testday1b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testday1c', size: 1, qty: 1, colour: '#00FF00'}
+									}
+									]
+							},
+							{
+								roundNumber: 2, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testday2a', size: 1, qty: 1, colour: '#FF0000'}
+										}, {
+										supports40: true,
+										release: {release: 'testday2b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testday2c', size: 1, qty: 1, colour: '#FF0000'}
+									}
+									]
+							},
+							{
+								roundNumber: 3, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testday3a', size: 1, qty: 1, colour: '#00FF00'}
+										}, {
+										supports40: true,
+										release: {release: 'testday3b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testday3c', size: 1, qty: 1, colour: '#FF0000'}
+									}
+									]
+							},
+							{
+								roundNumber: 4, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testday4a', size: 1, qty: 1, colour: '#FF0000'}
+										}, {
+										supports40: true,
+										release: {release: 'testday4b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testday4c', size: 1, qty: 1, colour: '#00FF00'}
+									}
+									]
+							},
+							{
+								roundNumber: 5, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testday5a', size: 1, qty: 1, colour: '#FF0000'}
+										}, {
+										supports40: true,
+										release: {release: 'testday5b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testday5c', size: 1, qty: 1, colour: '#FF0000'}
+									}
+									]
+							},
+							{
+								roundNumber: 6, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testday6a', size: 1, qty: 1, colour: '#00FF00'}
+										}, {
+										supports40: true,
+										release: {release: 'testday6b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testday6c', size: 1, qty: 1, colour: '#FF0000'}
+									}
+									]
+							},
+							{
+								roundNumber: 7, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testday7a', size: 1, qty: 1, colour: '#FF0000'}
+										}, {
+										supports40: true,
+										release: {release: 'testday7b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testday7c', size: 1, qty: 1, colour: '#00FF00'}
+									}
+									]
+							}
+							,
+							{
+								roundNumber: 7, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testday8a', size: 1, qty: 1, colour: '#FF0000'}
+										}, {
+										supports40: true,
+										release: {release: 'testday8b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testday8c', size: 1, qty: 1, colour: '#FF0000'}
+									}
+									]
+							}
+						],
+					nightRounds:
+						[
+							{
+								roundNumber: 1, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testnight1a', size: 1, qty: 1, colour: '#00FF00'}
+										}, {
+										supports40: true,
+										release: {release: 'testnight1b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testnight1c', size: 1, qty: 1, colour: '#FF0000'}
+									}
+									]
+							},
+							{
+								roundNumber: 2, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testnight2a', size: 1, qty: 1, colour: '#FF0000'}
+										}, {
+										supports40: true,
+										release: {release: 'testnight2b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testnight2c', size: 1, qty: 1, colour: '#00FF00'}
+									}
+									]
+							},
+							{
+								roundNumber: 3, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testnight3a', size: 1, qty: 1, colour: '#FF0000'}
+										}, {
+										supports40: true,
+										release: {release: 'testnight3b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testnight3c', size: 1, qty: 1, colour: '#FF0000'}
+									}
+									]
+							},
+							{
+								roundNumber: 4, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testnight4a', size: 1, qty: 1, colour: '#00FF00'}
+										}, {
+										supports40: true,
+										release: {release: 'testnight4b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testnight4c', size: 1, qty: 1, colour: '#FF0000'}
+									}
+									]
+							},
+							{
+								roundNumber: 5, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testnight5a', size: 1, qty: 1, colour: '#FF0000'}
+										}, {
+										supports40: true,
+										release: {release: 'testnight5b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testnight5c', size: 1, qty: 1, colour: '#00FF00'}
+									}
+									]
+							},
+							{
+								roundNumber: 6, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testnight6a', size: 1, qty: 1, colour: '#FF0000'}
+										}, {
+										supports40: true,
+										release: {release: 'testnight6b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testnight6c', size: 1, qty: 1, colour: '#FF0000'}
+									}
+									]
+							},
+							{
+								roundNumber: 7, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testnight7a', size: 1, qty: 1, colour: '#00FF00'}
+										}, {
+										supports40: true,
+										release: {release: 'testnight7b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testnight7c', size: 1, qty: 1, colour: '#FF0000'}
+									}
+									]
+							}
+							,
+							{
+								roundNumber: 7, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testnight8a', size: 1, qty: 1, colour: '#FF0000'}
+										}, {
+										supports40: true,
+										release: {release: 'testnight8b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testnight8c', size: 1, qty: 1, colour: '#00FF00'}
+									}
+									]
+							}
+						],
+				},
+				{
+					id: 'truck3',
+					dayRounds:
+						[
+							{
+								roundNumber: 1, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testday1a', size: 1, qty: 1, colour: '#FF0000'}
+										}, {
+										supports40: true,
+										release: {release: 'testday1b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testday1c', size: 1, qty: 1, colour: '#FF0000'}
+									}
+									]
+							},
+							{
+								roundNumber: 2, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testday2a', size: 1, qty: 1, colour: '#00FF00'}
+										}, {
+										supports40: true,
+										release: {release: 'testday2b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testday2c', size: 1, qty: 1, colour: '#FF0000'}
+									}
+									]
+							},
+							{
+								roundNumber: 3, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testday3a', size: 1, qty: 1, colour: '#FF0000'}
+										}, {
+										supports40: true,
+										release: {release: 'testday3b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testday3c', size: 1, qty: 1, colour: '#00FF00'}
+									}
+									]
+							},
+							{
+								roundNumber: 4, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testday4a', size: 1, qty: 1, colour: '#FF0000'}
+										}, {
+										supports40: true,
+										release: {release: 'testday4b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testday4c', size: 1, qty: 1, colour: '#FF0000'}
+									}
+									]
+							},
+							{
+								roundNumber: 5, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testday5a', size: 1, qty: 1, colour: '#00FF00'}
+										}, {
+										supports40: true,
+										release: {release: 'testday5b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testday5c', size: 1, qty: 1, colour: '#FF0000'}
+									}
+									]
+							},
+							{
+								roundNumber: 6, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testday6a', size: 1, qty: 1, colour: '#FF0000'}
+										}, {
+										supports40: true,
+										release: {release: 'testday6b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testday6c', size: 1, qty: 1, colour: '#00FF00'}
+									}
+									]
+							},
+							{
+								roundNumber: 7, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testday7a', size: 1, qty: 1, colour: '#FF0000'}
+										}, {
+										supports40: true,
+										release: {release: 'testday7b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testday7c', size: 1, qty: 1, colour: '#FF0000'}
+									}
+									]
+							}
+							,
+							{
+								roundNumber: 7, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testday8a', size: 1, qty: 1, colour: '#00FF00'}
+										}, {
+										supports40: true,
+										release: {release: 'testday8b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testday8c', size: 1, qty: 1, colour: '#FF0000'}
+									}
+									]
+							}
+						],
+					nightRounds:
+						[
+							{
+								roundNumber: 1, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testnight1a', size: 1, qty: 1, colour: '#FF0000'}
+										}, {
+										supports40: true,
+										release: {release: 'testnight1b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testnight1c', size: 1, qty: 1, colour: '#00FF00'}
+									}
+									]
+							},
+							{
+								roundNumber: 2, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testnight2a', size: 1, qty: 1, colour: '#FF0000'}
+										}, {
+										supports40: true,
+										release: {release: 'testnight2b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testnight2c', size: 1, qty: 1, colour: '#FF0000'}
+									}
+									]
+							},
+							{
+								roundNumber: 3, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testnight3a', size: 1, qty: 1, colour: '#00FF00'}
+										}, {
+										supports40: true,
+										release: {release: 'testnight3b', size: 1, qty: 1, colour: '#FF0000'}
+									}, {
+										supports40: false,
+										release: {release: 'testnight3c', size: 1, qty: 1, colour: '#FF0000'}
+									}
+									]
+							},
+							{
+								roundNumber: 4, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testnight4a', size: 1, qty: 1, colour: '#0000FF'}
+										}, {
+										supports40: true,
+										release: {release: 'testnight4b', size: 1, qty: 1, colour: '#00FF00'}
+									}, {
+										supports40: false,
+										release: {release: 'testnight4c', size: 1, qty: 1, colour: '#FF0000'}
+									}
+									]
+							},
+							{
+								roundNumber: 5, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testnight5a', size: 1, qty: 1, colour: '#FF0000'}
+										}, {
+										supports40: true,
+										release: {release: 'testnight5b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testnight5c', size: 1, qty: 1, colour: '#00FF00'}
+									}
+									]
+							},
+							{
+								roundNumber: 6, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testnight6a', size: 1, qty: 1, colour: '#FF0000'}
+										}, {
+										supports40: true,
+										release: {release: 'testnight6b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testnight6c', size: 1, qty: 1, colour: '#FF0000'}
+									}
+									]
+							},
+							{
+								roundNumber: 7, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testnight7a', size: 1, qty: 1, colour: '#00FF00'}
+										}, {
+										supports40: true,
+										release: {release: 'testnight7b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testnight7c', size: 1, qty: 1, colour: '#FF0000'}
+									}
+									]
+							}
+							,
+							{
+								roundNumber: 7, slots:
+									[
+										{
+											supports40: true,
+											release: {release: 'testnight8a', size: 1, qty: 1, colour: '#00FF00'}
+										}, {
+										supports40: true,
+										release: {release: 'testnight8b', size: 1, qty: 1, colour: '#0000FF'}
+									}, {
+										supports40: false,
+										release: {release: 'testnight8c', size: 1, qty: 1, colour: '#00FF00'}
+									}
+									]
+							}
+						],
+				}
+			]
+		};
+>>>>>>> neil-s3
 	},
 };
 
@@ -1225,6 +1993,8 @@ module.exports = {
 	fullReleases,
 	rounds,
     dbName,
+=======
+>>>>>>> neil-s3
     start,
     close,
     getDB,

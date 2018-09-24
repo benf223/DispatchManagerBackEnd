@@ -56,9 +56,25 @@ function parseDateString(date)
     return date.getDate() + "/" + (date.getMonth() + 1) + "/" + date.getFullYear();
 }
 
+function getTodaysDate()
+{
+    //return new Date().toJSON().slice(0,10).replace(/-/g,'/').split("/").reverse().join("/");
+    return new Date(new Date().toJSON().slice(0,10).replace(/-/g,'/'));
+}
+
+function getFirstProperty(obj)
+{
+    for(p in obj)
+    {
+        return obj[p];
+    }
+}
+
 module.exports = {
     parseTimeOfDay,
     timeOfDayIsBefore,
     createDate,
-    parseDateString
+    parseDateString,
+    getFirstProperty,
+    getTodaysDate
 }
