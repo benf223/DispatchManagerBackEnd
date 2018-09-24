@@ -57,7 +57,6 @@ api.get('/full_releases/:releaseID', (req, res) => {
 
 // Gets a TruckRounds object from the frontend and will update the database with the new information
 api.post('/update_rounds', (req, res) => {
-	console.log('jdiosa');
 	console.log(req.body);
 	res.send({result: 200});
 });
