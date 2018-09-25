@@ -61,6 +61,12 @@ api.post('/update_rounds', (req, res) => {
 	res.send({result: 200});
 });
 
+api.post('/login', (req, res) => {
+	let username = req.params.username;
+	let password = req.params.password;
+});
+
+
 // Gets a Change object from the frontend and will update the truncated version of the releases in the database with the new information
 api.post('/update_release', (req, res) => {
 	console.log(req.body);
