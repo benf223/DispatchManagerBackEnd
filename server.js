@@ -106,6 +106,14 @@ auth.post('/test', (req, res) => {
 	res.sendStatus(200);
 });
 
+auth.post('/login', (req, res) => {
+	console.log(req.body);
+
+	user = {username: req.body.username, password: req.body.password, token: 'hello'};
+
+	res.send(user)
+});
+
 app.use('/api', api);
 app.use('/auth', auth);
 
