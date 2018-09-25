@@ -1,3 +1,5 @@
+//https://demo-recur-api.herokuapp.com
+
 var express = require('express');
 var app = express();
 var bodyParser = require('body-parser');
@@ -64,6 +66,10 @@ api.post('/update_rounds', (req, res) => {
 api.post('/login', (req, res) => {
 	let username = req.params.username;
 	let password = req.params.password;
+	let valid = dbHelper.users.validateAndGet(username, password).then((user) =>
+	{
+		res.send(valid);
+	});
 });
 
 

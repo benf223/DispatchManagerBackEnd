@@ -7,7 +7,7 @@ chai.use(require("chai-as-promised"));
 const db = require("../db");
 const util = require("../util");
 const expect = chai.expect;
-const testDBPath = "mongodb://admin:admin123@ds125892.mlab.com:25892/recur_test";
+const testDBPath = "mongodb://admin:admin123@ds113703.mlab.com:13703/recur_test_db";
 
 const bcrypt = require("bcrypt");
 

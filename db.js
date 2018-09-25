@@ -7,12 +7,14 @@
  * e.g. locations.insert(), releases.remove()
  */
 
+ // MLab Login user: recur_admin pass: recur_admin123
+
 const MongoClient = require("mongodb").MongoClient;
 const util = require("./util");
 const je = require("./journeyEstimator");
 const bcrypt = require("bcrypt");
 
-const PATH = "mongodb://admin:recurdbadmin1@ds221242.mlab.com:21242/demo-recur-db";
+const PATH = "mongodb://admin:admin123@ds113703.mlab.com:13703/recur_test_db";
 const SALT_WORK_FACTOR = 10;
 
 var mongod = null;
@@ -156,9 +158,9 @@ const truckRounds = {
 
 	removeReleaseFromSlots: async (releaseNum, date, dayOrNight, roundNumber, slots = null) =>
 	{
-		entry = await truckRounds.get(date);
+		/*entry = await truckRounds.get(date);
 		let rounds = dayOrNight == "D" ? entry.dayRounds : entry.nightRounds;
-		let slots = removeReleaseFromSlotsAux(rounds[roundNumber]);
+		let slots = removeReleaseFromSlotsAux(rounds[roundNumber]);*/
 
 		
 		
@@ -187,7 +189,7 @@ const truckRounds = {
 
 	removeReleaseFromAllRounds: async (releaseNum, date = null, dayOrNight = null, roundNumber = null, currentEntry = null) =>
 	{
-		let date = util.getTodaysDate();
+		//let date = util.getTodaysDate();
 		while(date.getDate() <= await truckRounds.getLatestDate.getDate())
 		{
 			let truckRounds = await truckRounds.get(date);
