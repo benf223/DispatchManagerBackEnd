@@ -101,15 +101,19 @@ api.delete('/delete_release/:release', (req, res) => {
 	res.sendStatus(200);
 });
 
-auth.post('/test', (req, res) => {
+auth.post('/register', (req, res) => {
 	console.log(req.body);
-	res.sendStatus(200);
+
+	user = {username: req.body.username, token: null};
+
+	res.send(user);
+	// res.sendStatus(200);
 });
 
 auth.post('/login', (req, res) => {
 	console.log(req.body);
 
-	user = {username: req.body.username, password: req.body.password, token: 'hello'};
+	user = {username: req.body.username, token: 'hello'};
 
 	res.send(user)
 });
