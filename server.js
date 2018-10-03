@@ -4,9 +4,11 @@ var express = require('express');
 var app = express();
 var bodyParser = require('body-parser');
 var dbHelper = require('./db.js');
+var jwt = require('./jwt.js');
+var userService = require('./user.service');
 
 app.use(bodyParser.json());
-
+app.use(jwt());
 app.use((req, res, next) => {
 	res.header("Access-Control-Allow-Origin", "*");
 	res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
@@ -112,9 +114,25 @@ api.delete('/delete_release/:release', (req, res) => {
 	res.sendStatus(200);
 });
 
-auth.post('/test', (req, res) => {
+auth.post('/register', (req, res) => {
 	console.log(req.body);
-	res.sendStatus(200);
+
+	userService.create(req.body).then(() => res.json({}));
+
+	user = {username: req.body.username, token: null};
+
+	res.send(user);
+	// res.sendStatus(200);
+});
+
+auth.post('/login', (req, res) => {
+	console.log(req.body);
+
+	userService.authenticate(req.body).then(user => user ? res.json(user) : res.status(400).json({message : 'Error authenticating'}));
+
+	user = {username: req.body.username, token: 'hello'};
+
+	res.send(user)
 });
 
 app.use('/api', api);
