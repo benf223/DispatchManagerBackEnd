@@ -32,8 +32,7 @@ const TruckTypeEnum = {
     tribox: 0,
     skeletal: 1,
     parse: (s) => parseEnum(s, TruckTypeEnum),
-    toString: (e) => getEnumString(e, this)
-}
+    toString: (e) => getEnumString(e, this)}
 
 /**
  * Returns name of enum value.
