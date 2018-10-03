@@ -53,6 +53,18 @@ const release2 = {
     to: location1.name
 }
 
+const truckRounds1 = {
+    id: "1/10/2018",
+    dayRounds:[[release1.number], [release1.number]],
+    nightRounds:[[release1.number], [release2.number, release2.number]]
+}
+
+const truckRounds2 = {
+    id: "12/10/2018",
+    dayRounds:[[release2.number, release2.number]],
+    nightRounds:[[release2.number]]
+}
+
 before(function ()
 {
     return db.start(testDBPath).then(() => 
@@ -66,59 +78,51 @@ after(function()
     db.close();
 });
 
-describe.only("Database Collections", function()
+describe("Database Collections", function()
 {
     this.timeout(3000);
 
     describe("truckRounds", function()
     {
-        const truckRounds1 = {
-            id: "12345",
-            dayRounds: [],
-            nightRounds: []
-        }
-
-        const truckRounds2 = {
-            id: "56789",
-            dayRounds: [],
-            nightRounds: []
-        }
-
-        describe("insert()", function()
+        before(function()
         {
-            before(function()
+            return insertAll({locations: [location1, location2], releases: [release1, release2]})
+        });
+
+        after(function()
+        {
+            return removeAll(["truckRounds", "releases", "locations"]);
+        });
+
+        describe.only("update()", function()
+        {
+            let updatedEntry;
+
+            beforeEach(function()
             {
-                return insertAll({locations: [location1, location2], releases: [release1, release2]});
+                updatedEntry = Object.assign({}, truckRounds1);
             });
 
-            it("should insert a given set of truck rounds into the collection", function()
+            it("should insert an entry if its ID does not already exist in the collection", function()
             {
-                return db.truckRounds.insert(truckRounds1.id, truckRounds1.dayRounds, truckRounds1.nightRounds).then(() =>
-                {
-                    return get("truckRounds", {id: truckRounds1.id});
-                }).then((res) =>
+                return db.truckRounds.update(updatedEntry).then(() => get("truckRounds", {id: truckRounds1.id})).then((res) =>
                 {
                     return expectStringified(res, truckRounds1);
                 });
             });
 
-            it("should throw an error if the ID of the set of truck rounds already exists", function()
+            it("should update an existing value if the ID already exists", function()
             {
-                return insert("truckRounds", truckRounds2).then(() =>
+                updatedEntry.dayRounds = truckRounds2.dayRounds;
+                updatedEntry.nightRounds = truckRounds2.nightRounds;
+                return insert("truckRounds", truckRounds1).then(() =>
                 {
-                    return expect(db.truckRounds.insert(truckRounds2.id, truckRounds1.dayRounds, truckRounds1.nightRounds)).to.eventually.be.rejectedWith("truckRounds already contains entry '" + truckRounds2.id + "'");
+                    return db.truckRounds.update(updatedEntry);
+                }).then(() => get("truckRounds", {id: truckRounds1.id})).then((res) =>
+                {
+                    return expectStringified(res, updatedEntry);
                 });
             });
-        });
-
-        describe("update()", function()
-        {
-
-        });
-
-        describe("remove()", function()
-        {
-
         });
 
         describe("get()", function()

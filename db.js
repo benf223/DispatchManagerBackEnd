@@ -72,137 +72,24 @@ function isValidEnum(e, type)
 
 const truckRounds = {
 	/**
-	 * @param {string} id
-	 * @param {Object[]} [dayRounds]
-	 * @param {number} dayRounds.roundNumber
-	 * @param {String[]} dayRounds.slots - Array of all associated release numbers 
-	 * @param {Object[]} [nightRounds]
-	 * @param {number} nightRounds.roundNumber
-	 * @param {String[]} nightRounds.slots - Array of all associated release numbers 
+	 * Updates an entry in the truckRounds collection with the passed entry.
+	 * Value will be inserted if it does the ID does not already exist.
+	 * 
+	 * @param {Object} entry
+	 * @param {string} entry.id
+	 * @param {Object[]} entry.dayRounds
+	 * @param {Object[]} entry.nightRounds
 	 */
-	insert: (id, dayRounds = [], nightRounds = []) =>
+	update: async (entry) =>
 	{
-		// Checks all releases exist in database
-		/*for(const d of dayRounds.concat(nightRounds))
+		if(await contains("truckRounds", {id: entry.id}))
 		{
-			for(const r of d.slots)
-			{
-				if(!contains("release", {number: r}))
-				{
-					throw new Error("Release '" + r + "' does not exist");
-				}
-			}
-		}*/
-		return insert("truckRounds", {id: id}, {id: id, dayRounds: dayRounds, nightRounds: nightRounds});
-	},
-
-	/**
-	 * @param {string} id
-	 * @param {string} dayOrNight - whether to add to day or night rounds, should be 'D' or 'N'
-	 */
-	addReleaseToRound: async (id, dayOrNight, roundNumber, releaseNumber) =>
-	{
-		if(dayOrNight !== "D" && dayOrNight !== "N") throw new Error("dayOrNight must be 'D' or 'N'");
-		if(!(await releases.contains(releaseNumber))) throw new Error("Release " + releaseNumber + " does not exist");
-		let t = await truckRounds.get(id);
-		let rounds = dayOrNight === "D" ? t.dayRounds : t.nightRounds;
-		if(roundNumber < 0 || roundNumber >= rounds.length) throw new Error("Round number " + roundNumber + " not between 0 - " + (rounds.length - 1));
-		rounds[roundNumber].push(releaseNumber);
-		if(dayOrNight === "D")
-		{
-			update("truckRounds", {id: id}, {dayRounds: t.dayRounds});
+			await update("truckRounds", {id: entry.id}, entry);
 		}
 		else
 		{
-			update("truckRounds", {id: id}, {nightRounds: t.nightRounds});
+			await insert("truckRounds", null, entry);
 		}
-	},
-
-	/**
-	 * @param {string} id
-	 * @param {string} dayOrNight - whether to add to day or night rounds, should be 'D' or 'N'
-	 */
-	addRelease: async (id, dayOrNight, roundNumber, releaseNumber) =>
-	{
-		if(dayOrNight !== "D" && dayOrNight !== "N") throw new Error("dayOrNight must be 'D' or 'N'");
-		if(!(await releases.contains(releaseNumber))) throw new Error("Release " + releaseNumber + " does not exist");
-		let t = await truckRounds.get(id);
-		let rounds = dayOrNight === "D" ? t.dayRounds : t.nightRounds;
-		let entry = rounds.find((s) => s.roundNumber === roundNumber);
-		if(!entry) throw new Error("No round number '" + roundNumber + "' exists");
-		return entry.push(releaseNumber);
-	},
-
-	removeRelease: async (id, dayOrNight, roundNumber, releaseNumber) =>
-	{
-		if(dayOrNight !== "D" && dayOrNight !== "N") throw new Error("dayOrNight must be 'D' or 'N'");
-		let t = await truckRounds.get(id);
-		let rounds = dayOrNight === "D" ? t.dayRounds : t.nightRounds;
-		let entry = rounds.find((s) => s.roundNumber === roundNumber);
-		if(!entry) throw new Error("No round number '" + roundNumber + "' exists");
-		
-	},
-
-	removeReleaseFromSlotsAux: async (releaseNum, slots) =>
-	{
-		for(let i = 0; i < slots.length; i++)
-		{
-			if(slots[i] === releaseNum)
-			{
-				slots[i] = null;
-			}
-		}
-
-		return slots;
-	},
-
-	removeReleaseFromSlots: async (releaseNum, date, dayOrNight, roundNumber, slots = null) =>
-	{
-		/*entry = await truckRounds.get(date);
-		let rounds = dayOrNight == "D" ? entry.dayRounds : entry.nightRounds;
-		let slots = removeReleaseFromSlotsAux(rounds[roundNumber]);*/
-
-		
-		
-	},
-
-	removeReleaseFromRounds: async (releaseNum, date, dayOrNight) =>
-	{
-
-	},
-
-	removeReleaseInRounds: (releaseNum, rounds) =>
-	{
-		for(s of rounds)
-		{
-			for(let i = 0; i < s.length; i++)
-			{
-				if(s[i] === releaseNum)
-				{
-					s[i] = null;
-				}
-			}
-		}
-
-		return rounds;
-	},
-
-	removeReleaseFromAllRounds: async (releaseNum, date = null, dayOrNight = null, roundNumber = null, currentEntry = null) =>
-	{
-		//let date = util.getTodaysDate();
-		while(date.getDate() <= await truckRounds.getLatestDate.getDate())
-		{
-			let truckRounds = await truckRounds.get(date);
-			truckRounds.dayRounds = truckRounds.removeReleaseInRounds(releaseNum, truckRounds.dayRounds);
-			truckRounds.nightRounds = truckRounds.removeReleaseInRounds(releaseNum, truckRounds.nightRounds);
-			update("truckRounds", {id: date}, {dayRounds: truckRounds.dayRounds, nightRounds: truckRounds.nightRounds});
-			date.setDate(date.getDate() + 1);
-		}
-	},
-
-	getLatestDate: async() =>
-	{
-		return await get("truckRounds", {}).sort({"id": -1}).limit(1);
 	},
 
 	get: async (id) =>
@@ -218,16 +105,6 @@ const truckRounds = {
 	getNightRounds: async (id) =>
 	{
 		return await truckRounds.get(id).nightRounds;
-	},
-
-	cancelRound: async (id, dayOrNight, roundNumber, slotIndex) =>
-	{
-		if(dayOrNight !== "D" && dayOrNight !== "N") throw new Error("dayOrNight must be 'D' or 'N'");
-		let t = await truckRounds.get(id);
-		let rounds = dayOrNight === "D" ? t.dayRounds : t.nightRounds;
-		let entry = rounds.find((s) => s.roundNumber === roundNumber);
-		if(!entry) throw new Error("No round number '" + roundNumber + "' exists");
-		entry[slotIndex] = null;
 	},
 
 	getAll: async () =>
