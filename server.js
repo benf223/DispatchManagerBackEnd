@@ -108,6 +108,11 @@ api.post('/add_release', (req, res) => {
 	res.sendStatus(200);
 });
 
+api.post('/edit_release', (req, res) => {
+	console.log(req.body);
+	res.send({result: 200});
+});
+
 // Need to find and remove the release based on it's ID as given
 api.delete('/delete_release/:release', (req, res) => {
 	console.log(req.params.release);
