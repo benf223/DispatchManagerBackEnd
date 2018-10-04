@@ -44,7 +44,7 @@ api.get('/releases/:date', (req, res) => {
 // Retrieves all the full releases
 api.get('/full_releases', (req, res) => {
 	// Should retrieve all releases that were started within the past 30 days?
-	dbHelper.fullReleases.get(null, null).then((result) => {
+	dbHelper.fullReleases.getAll().then((result) => {
 		res.send(result);
 	})
 });
@@ -106,6 +106,11 @@ api.post('/update_release', (req, res) => {
 api.post('/add_release', (req, res) => {
 	console.log(req.body);
 	res.sendStatus(200);
+});
+
+api.post('/edit_release', (req, res) => {
+	console.log(req.body);
+	res.send({result: 200});
 });
 
 // Need to find and remove the release based on it's ID as given
