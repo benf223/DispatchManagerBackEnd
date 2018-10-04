@@ -70,16 +70,20 @@ function isValidEnum(e, type)
 }
 
 const truckRounds = {
+	// TODO Receive rounds for a day and truck from id given and replace with passed truck stuff
 	/**
 	 * Updates an entry in the truckRounds collection with the passed entry.
 	 * Value will be inserted if it does the ID does not already exist.
 	 * 
+	 * TODO: insert date as key with array of {id, dayRounds, nightRounds}
+	 * 
 	 * @param {Object} entry
+	 * @param {}
 	 * @param {string} entry.id
 	 * @param {Object[]} entry.dayRounds
 	 * @param {Object[]} entry.nightRounds
 	 */
-	update: async (entry) =>
+	update: async (date, entry) =>
 	{
 		if(await contains("truckRounds", {id: entry.id}))
 		{
@@ -91,9 +95,10 @@ const truckRounds = {
 		}
 	},
 
-	get: async (id) =>
+	// gets entry by date, inserts empty entry if none is there
+	get: async (date) =>
 	{
-		return await get("truckRounds", {id: id});
+		return await get("truckRounds", {date: date});
 	},
 
 	getDayRounds: async (id) =>
@@ -112,6 +117,10 @@ const truckRounds = {
 	}
 }
 
+// First name, last name, username, password
+
+// Login: get username and hashed password
+// Register: sees if user in table
 const users = {
 	insert: async (username, password) =>
 	{
@@ -414,6 +423,13 @@ const trucks = {
         return await getAll("trucks");
     }
 };
+
+//TODO make small releases table
+
+// Update: pass id, day, boolean for up or down 1
+// Insert: release_number, size, qty, color
+// Edit: Given release id, delete record and replace with releas
+// Remove: remove from given id
 
 /**
  * Orders for container deliveries received by clients
