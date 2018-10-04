@@ -44,7 +44,7 @@ api.get('/releases/:date', (req, res) => {
 // Retrieves all the full releases
 api.get('/full_releases', (req, res) => {
 	// Should retrieve all releases that were started within the past 30 days?
-	dbHelper.fullReleases.get(null, null).then((result) => {
+	dbHelper.fullReleases.getAll().then((result) => {
 		res.send(result);
 	})
 });
