@@ -80,7 +80,7 @@ after(function()
 
 describe("Database Collections", function()
 {
-    this.timeout(3000);
+    this.timeout(10000);
 
     describe("truckRounds", function()
     {
@@ -94,7 +94,7 @@ describe("Database Collections", function()
             return removeAll(["truckRounds", "releases", "locations"]);
         });
 
-        describe.only("update()", function()
+        describe("update()", function()
         {
             let updatedEntry;
 
@@ -148,28 +148,6 @@ describe("Database Collections", function()
             it("should return null if an entry cannot be found", function()
             {
                 return expect(db.truckRounds.get("Hello")).to.eventually.be.null;
-            });
-        });
-
-        describe("getAll()", function()
-        {
-            before(function()
-            {                
-                return remove("truckRounds").then(() => insertAll({truckRounds: [truckRounds1, truckRounds2]}));
-            });
-
-            after(function()
-            {
-                return remove("truckRounds");
-            });
-
-            it("should return all entries in the collection", function()
-            {
-                return db.truckRounds.getAll().then((res) =>
-                {
-                    expectStringified(res[0], truckRounds1);
-                    return expectStringified(res[1], truckRounds2);
-                });
             });
         });
     });
