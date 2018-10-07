@@ -9,8 +9,6 @@ const util = require("../util");
 const expect = chai.expect;
 const testDBPath = "mongodb://admin:admin123@ds113703.mlab.com:13703/recur_test_db";
 
-const bcrypt = require("bcrypt");
-
 let testdb = null;
 
 const location1 = {
@@ -94,7 +92,7 @@ describe("Database Collections", function()
             return removeAll(["truckRounds", "releases", "locations"]);
         });
 
-        describe("update()", function()
+        describe.only("update()", function()
         {
             let updatedEntry;
 

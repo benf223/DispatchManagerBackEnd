@@ -12,10 +12,8 @@
 const MongoClient = require("mongodb").MongoClient;
 const util = require("./util");
 const je = require("./journeyEstimator");
-const bcrypt = require("bcrypt");
 
 const PATH = "mongodb://admin:admin123@ds113703.mlab.com:13703/recur_test_db";
-const SALT_WORK_FACTOR = 10;
 
 var mongod = null;
 var db = null;
@@ -69,30 +67,34 @@ function isValidEnum(e, type)
     return typeof Object.keys(type)[e] != "undefined";
 }
 
-const truckRounds = {
+/**
+ * Location that containers are delivered to/from
+ * 
+ * Properties:
+ * 	{string} date - Date of associated rounds, must be unique
+ * 	{Object[]} truckRounds
+ *  {string} truckRounds[i].id - ID of associated truck
+ *  {Object[]} truckRounds[i].dayRounds - Rounds for truck during the day
+ *  {number} truckRounds[i].dayRounds[j].roundNumber - Index of round
+ *  {string[]} truckRounds[i].dayRounds[j].slots - Release numbers of associated releases for round
+ * 	{Object[]} truckRounds[i].nightRounds - Rounds for truck during the night
+ *  {number} truckRounds[i].nightRounds[j].roundNumber - Index of round
+ *  {string[]} truckRounds[i].nightRounds[j].slots - Release numbers of associated releases for round
+ *  
+ */
+const rounds = {
 	// TODO Receive rounds for a day and truck from id given and replace with passed truck stuff
-	/**
-	 * Updates an entry in the truckRounds collection with the passed entry.
-	 * Value will be inserted if it does the ID does not already exist.
-	 * 
-	 * TODO: insert date as key with array of {id, dayRounds, nightRounds}
-	 * 
-	 * @param {Object} entry
-	 * @param {}
-	 * @param {string} entry.id
-	 * @param {Object[]} entry.dayRounds
-	 * @param {Object[]} entry.nightRounds
-	 */
-	update: async (date, entry) =>
+
+	insert: async (date, truckRounds) =>
 	{
-		if(await contains("truckRounds", {id: entry.id}))
-		{
-			await update("truckRounds", {id: entry.id}, entry);
-		}
-		else
-		{
-			await insert("truckRounds", null, entry);
-		}
+		return await insert("rounds", {date: date, truckRounds: truckRounds});
+	},
+
+	replaceTruckRounds: async (date, truckID, newRounds) =>
+	{
+		currentRounds = await rounds.get(date);
+		currentRounds.truckRounds[indexOf(currentRounds.truckRounds.find(t => t.id === truckID))] = newRounds;
+		return await update("rounds", {date: date}, currentRounds);
 	},
 
 	// gets entry by date, inserts empty entry if none is there
@@ -122,10 +124,9 @@ const truckRounds = {
 // Login: get username and hashed password
 // Register: sees if user in table
 const users = {
-	insert: async (username, password) =>
+	register: async (firstName, lastName, username, password) =>
 	{
-		password = await bcrypt.hash(password, await bcrypt.genSalt(SALT_WORK_FACTOR));
-		return await insert("users", {username: username}, {username: username, password: password});
+		return await insert("users", {username: username}, {firstName: firstName, lastName: lastName, username: username, password: password});
 	},
 
 	update: async (username, query) =>
@@ -134,6 +135,9 @@ const users = {
 		{
 			switch(p)
 			{
+				case "firstName":
+				case "lastName":
+					break;
 				case "username":
 					if(await contains("users", {username: query[p]})) throw new Error("users already contains entry '" + query.username + "'");
 					break;
@@ -158,17 +162,14 @@ const users = {
 		return await get("users", {username: username});
 	},
 
-	validateAndGet: async (username, password) =>
-	{
-		let user = await users.get(username);
-		if(!user) throw new Error("No user '" + username + "' exists");
-		if(!bcrypt.compareSync(password, user.password)) throw new Error("Password does not match");
-		return user;
-	},
-
 	getAll: async () =>
 	{
 		return await getAll("users");
+	},
+
+	contains: async (username) =>
+	{
+		return await contains("users", {username: username});
 	}
 }
 
@@ -430,6 +431,34 @@ const trucks = {
 // Insert: release_number, size, qty, color
 // Edit: Given release id, delete record and replace with releas
 // Remove: remove from given id
+
+const smallReleases = {
+	insert: async (releaseNumber, size, quantity, colour) =>
+	{
+		entry = {
+			releaseNumber: releaseNumber,
+			size: size,
+			quantity: quantity,
+			colour: colour
+		}
+		return await insert("smallReleases", {releaseNumber: releaseNumber}, entry);
+	},
+
+	update: async (releaseNumber, day, up) =>
+	{
+
+	},
+
+	remove: async (releaseNumber) =>
+	{
+		return await remove("smallReleases", {releaseNumber: releaseNumber});
+	},
+
+	getAll: async () =>
+	{
+		return await getAll("smallReleases");
+	}
+}
 
 /**
  * Orders for container deliveries received by clients
