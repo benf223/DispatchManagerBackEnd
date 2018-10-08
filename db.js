@@ -433,9 +433,10 @@ const trucks = {
 // Remove: remove from given id
 
 const smallReleases = {
-	insert: async (releaseNumber, size, quantity, colour) =>
+	insert: async (date, releaseNumber, size, quantity, colour) =>
 	{
 		entry = {
+			date: date,
 			releaseNumber: releaseNumber,
 			size: size,
 			quantity: quantity,
@@ -444,14 +445,20 @@ const smallReleases = {
 		return await insert("smallReleases", {releaseNumber: releaseNumber}, entry);
 	},
 
-	update: async (releaseNumber, day, up) =>
+	incOrDecQuantity: async (date, releaseNumber, up) =>
 	{
-
+		let quantity = (await get("smallReleases", {date: date, releaseNumber: releaseNumber})).quantity;
+		return await update("smallReleases", {date: date, releaseNumber: releaseNumber}, {quantity : (up ? quantity + 1 : quantity - 1) });
 	},
 
 	remove: async (releaseNumber) =>
 	{
 		return await remove("smallReleases", {releaseNumber: releaseNumber});
+	},
+
+	getByDate: async (date) =>
+	{
+		return (await get("smallReleases", {date: date})).toArray();
 	},
 
 	getAll: async () =>
