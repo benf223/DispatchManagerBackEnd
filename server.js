@@ -36,7 +36,7 @@ api.get('/releases/:date', (req, res) => {
 	let params = req.params.date;
 
 	// Query the truncated version
-	dbHelper.releases.get(params).then((result) => {
+	dbHelper.smallReleases.get(params).then((result) => {
 		res.send(result.releases);
 	});
 });
@@ -44,7 +44,7 @@ api.get('/releases/:date', (req, res) => {
 // Retrieves all the full releases
 api.get('/full_releases', (req, res) => {
 	// Should retrieve all releases that were started within the past 30 days?
-	dbHelper.fullReleases.getAll().then((result) => {
+	dbHelper.releases.getAll().then((result) => {
 		res.send(result);
 	})
 });
@@ -54,90 +54,120 @@ api.get('/full_releases/:releaseID', (req, res) => {
 	// This is bad form need to change it.
 	let params = req.params.releaseID.split('@');
 
-	dbHelper.fullReleases.get(params[0], params[1]).then((result) => {
+	// params[0] == date
+	// params[1] == release id
+	dbHelper.releases.get(params[1]).then((result) => {
 		res.send(result);
 	})
 });
 
 // Gets a TruckRounds object from the frontend and will update the database with the new information
-api.post('/update_rounds', (req, res) => {
+api.post('/update_rounds/:date', (req, res) => {
 	console.log(req.body);
-	res.send({result: 200});
-});
+	console.log(req.params.date);
 
-api.post('/login', (req, res) => {
-	let username = req.params.username;
-	let password = req.params.password;
-	let valid = dbHelper.users.validateAndGet(username, password).then((user) =>
-	{
-		res.send(valid);
+	dbHelper.rounds.replaceTruckRounds(req.params.date, req.truckID).then((result) => {
+		// Verification here?
+		res.send({result: 200});
 	});
 });
 
-
 // Gets a Change object from the frontend and will update the truncated version of the releases in the database with the new information
-api.post('/update_release', (req, res) => {
+api.post('/update_release/:date', (req, res) => {
 	console.log(req.body);
+	console.log(req.params.date);
 
-	// if (req.body.increase1) {
-	// 	console.log(`Increase ${req.body.increase1.release}`);
-	// 	dbHelper.releases.update(null, null);
-	// }
-	//
-	// if (req.body.increase2) {
-	// 	console.log(`Increase ${req.body.increase2.release}`);
-	// 	dbHelper.releases.update(null, null);
-	// }
-	//
-	// if (req.body.decrease1) {
-	// 	console.log(`Decrease ${req.body.decrease1.release}`);
-	// 	dbHelper.releases.update(null, null);
-	// }
-	//
-	// if (req.body.decrease2) {
-	// 	console.log(`Decrease ${req.body.decrease2.release}`);
-	// 	dbHelper.releases.update(null, null);
-	// }
+	if (req.body.increase1) {
+		console.log(`Increase ${req.body.increase1.release}`);
+		dbHelper.smallReleases.incOrDecQuantity(req.params.date, req.body.increase1.release, true).then((result) => {
+			// Verification here?
+			res.send({result: 200});
+		});
+	}
 
-	res.send({result: 200});
+	if (req.body.increase2) {
+		console.log(`Increase ${req.body.increase2.release}`);
+		dbHelper.smallReleases.incOrDecQuantity(req.params.date, req.body.increase2.release, true).then((result) => {
+			// Verification here?
+			res.send({result: 200});
+		});
+	}
+
+	if (req.body.decrease1) {
+		console.log(`Decrease ${req.body.decrease1.release}`);
+		dbHelper.smallReleases.incOrDecQuantity(req.params.date, req.body.decrease1.release, false).then((result) => {
+			// Verification here?
+			res.send({result: 200});
+		});
+	}
+
+	if (req.body.decrease2) {
+		console.log(`Decrease ${req.body.decrease2.release}`);
+		dbHelper.smallReleases.incOrDecQuantity(req.params.date, req.body.decrease2.release, false).then((result) => {
+			// Verification here?
+			res.send({result: 200});
+		});
+	}
 });
 
 // Adds a new release to the FullReleases collection and then adds a truncated version to the Releases collection
 api.post('/add_release', (req, res) => {
 	console.log(req.body);
-	res.sendStatus(200);
+
+	dbHelper.releases.insert('', '', 0, 0, null, null, '', '').then((result) => {
+		// Verification here?
+		dbHelper.smallReleases.insert(null, null, null, null, null).then((result) => {
+			// Verification here?
+			res.send({result: 200});
+		})
+	});
 });
 
 api.post('/edit_release', (req, res) => {
 	console.log(req.body);
-	res.send({result: 200});
+
+	// TODO need to remove the release from the rounds (or cleverly reassign it (other team))
+
+	dbHelper.releases.remove(req.body.release.release).then((result) => {
+		// Verification here?
+		dbHelper.smallReleases.remove(req.body.release.release).then((result) => {
+			// Verification here?
+			dbHelper.releases.insert('', '', 0, 0, null, null, '', '').then((result) => {
+				// Verification here
+				dbHelper.smallReleases.insert(null, null, null, null, null, null).then((result) => {
+					// Verification here
+					res.send({result: 200});
+				})
+			});
+		});
+	});
 });
 
 // Need to find and remove the release based on it's ID as given
 api.delete('/delete_release/:release', (req, res) => {
 	console.log(req.params.release);
-	res.sendStatus(200);
+
+	dbHelper.releases.remove(req.params.release).then((result) => {
+		// Verification here?
+		dbHelper.smallReleases.remove(req.params.release).then((result) => {
+			// Verification here
+			res.send({result: 200});
+		})
+	});
+
+	// TODO need to remove the release from the rounds
 });
 
 auth.post('/register', (req, res) => {
 	console.log(req.body);
 
 	userService.create(req.body).then(() => res.json({}));
-
-	user = {username: req.body.username, token: null};
-
-	res.send(user);
-	// res.sendStatus(200);
 });
 
 auth.post('/login', (req, res) => {
 	console.log(req.body);
 
 	userService.authenticate(req.body).then(user => user ? res.json(user) : res.status(400).json({message : 'Error authenticating'}));
-
-	user = {username: req.body.username, token: 'hello'};
-
-	res.send(user)
 });
 
 app.use('/api', api);

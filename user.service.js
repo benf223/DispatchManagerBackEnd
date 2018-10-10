@@ -13,7 +13,7 @@ module.exports = {
 async function authenticate({ username, password }) {
 	const user = await db.users.get(username);
 	if (user && bcrypt.compareSync(password, user.hash)) {
-		const { hash, ...userWithoutHash } = user.toObject();	// TODO
+		const { hash, ...userWithoutHash } = user;	// TODO
 		const token = jwt.sign({ sub: user.id }, config.secret);
 		return {
 			...userWithoutHash,
