@@ -1,3 +1,4 @@
 {
-  "secret": "789re2whnfs4r30 892qy9mjsduihfduslohgfdsjnkh78234"
+  "secret": "789re2whnfs4r30 892qy9mjsduihfduslohgfdsjnkh78234",
+  "dbPath": "mongodb://admin:admin123@ds113703.mlab.com:13703/recur_test_db"
 }

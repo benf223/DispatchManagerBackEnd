@@ -13,7 +13,7 @@ const MongoClient = require("mongodb").MongoClient;
 const util = require("./util");
 const je = require("./journeyEstimator");
 
-const PATH = "mongodb://admin:admin123@ds113703.mlab.com:13703/recur_test_db";
+const PATH = require("./config.json").dbPath;
 
 var mongod = null;
 var db = null;
