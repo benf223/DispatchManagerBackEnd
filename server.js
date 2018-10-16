@@ -3,24 +3,26 @@
 var express = require('express');
 var app = express();
 var bodyParser = require('body-parser');
-var dbHelper = require('./db.js');
 var jwt = require('./jwt.js');
 var userService = require('./user.service');
+var dbHelper = require('./db.js');
 
 app.use(bodyParser.json());
 app.use(jwt());
 app.use((req, res, next) => {
 	res.header("Access-Control-Allow-Origin", "*");
-	res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+	res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
 	res.header("Access-Control-Allow-Methods", "GET, POST, DELETE");
 	next();
 });
 
-var api = express.Router();
-var auth = express.Router();
+var api = express.Router(null);
+var auth = express.Router(null);
 
 // Used to wake up the Heroku App
 api.get('/start', (req, res) => {
+	// res.sendStatus(200);
+	// userService.create({username: 'admin', password: 'test', firstName: 'admin', lastName: 'istrator'});
 });
 
 // Rounds assigned to each truck on a given day
