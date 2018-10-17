@@ -175,4 +175,8 @@ auth.post('/login', (req, res) => {
 app.use('/api', api);
 app.use('/auth', auth);
 
-app.listen(process.env.PORT || 3000);
+app.listen(process.env.PORT || 3000, () =>
+{
+	console.log("Server running");
+	dbHelper.start();
+});
