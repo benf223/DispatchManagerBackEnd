@@ -8,15 +8,16 @@ const db = require('./db.js');
 module.exports = {
 	authenticate,
 	create,
+	getByUsername,
 };
 
-async function authenticate({ username, password }) {
-	const user = await db.users.get(username);
-	if (user && bcrypt.compareSync(password, user.hash)) {
-		const { hash, ...userWithoutHash } = user;	// TODO
-		const token = jwt.sign({ sub: user.id }, config.secret);
+async function authenticate(userData) {
+	const user = await db.users.get(userData.username);
+
+	if (user && bcrypt.compareSync(userData.password, user.password)) {
+		console.log('matches');
+		const token = jwt.sign({ sub: user.username }, config.secret);
 		return {
-			...userWithoutHash,
 			token
 		};
 	}
@@ -28,11 +29,12 @@ async function create(userParam) {
 		throw 'Username "' + userParam.username + '" is already taken';
 	}
 
-	const user = db.users.insert(userParam);
-
 	// hash password
-	if (userParam.password) {
-		user.hash = bcrypt.hashSync(userParam.password, 10);
-	}
+	let hash = bcrypt.hashSync(userParam.password, 10);
 
+	return db.users.register(userParam.firstName, userParam.lastName, userParam.username, hash);
+}
+
+async function getByUsername(username) {
+	return await db.users.get(username);
 }

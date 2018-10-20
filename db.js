@@ -7,8 +7,6 @@
  * e.g. locations.insert(), releases.remove()
  */
 
- // MLab Login user: recur_admin pass: recur_admin123
-
 const MongoClient = require("mongodb").MongoClient;
 const util = require("./util");
 const je = require("./journeyEstimator");
@@ -337,6 +335,7 @@ const locations = {
  * 	{string} name: name of truck, must be unique
  * 	{string | number} type: Type of truck, must be a value of TruckTypeEnum or its name as a string
  */
+// TODO get number and use it to generate the amount of trucks to show in rounds
 const trucks = {
     /**
      * @param {string} name
@@ -416,8 +415,6 @@ const trucks = {
     }
 };
 
-//TODO make small releases table
-
 // Update: pass id, day, boolean for up or down 1
 // Insert: release_number, size, qty, color
 // Edit: Given release id, delete record and replace with releas
@@ -435,23 +432,19 @@ const smallReleases = {
 		}
 		return await insert("smallReleases", {releaseNumber: releaseNumber}, entry);
 	},
-
 	incOrDecQuantity: async (date, releaseNumber, up) =>
 	{
 		let quantity = (await get("smallReleases", {date: date, releaseNumber: releaseNumber})).quantity;
 		return await update("smallReleases", {date: date, releaseNumber: releaseNumber}, {quantity : (up ? quantity + 1 : quantity - 1) });
 	},
-
 	remove: async (releaseNumber) =>
 	{
 		return await remove("smallReleases", {releaseNumber: releaseNumber});
 	},
-
 	get: async (date) =>
 	{
 		return (await get("smallReleases", {date: date})).toArray();
 	},
-
 	getAll: async () =>
 	{
 		return await getAll("smallReleases");
@@ -482,43 +475,53 @@ const releases = {
      * @param {string} from: must match location name from database
      * @param {string} to: must match location name from database
      */
-    insert: async (number, client, quantity20ft, quantity40ft, acceptanceDate, cutoffDate, from, to) =>
+    insert: async (receivedDate, release, client, route, qtyTwenty, qtyForty, choose, containerType, containerNumbers, dueDate, dueTime, reference, notes, status, completeDate, invoiced, colour) =>
     {
-        // Check required arguments
-        if(!number) throw new Error("A release number is required");
-        if(!client) throw new Error("A client is required");
-
-		// Checks quantities are positive integers
-		if(!Number.isInteger(quantity20ft) || quantity20ft < 0) throw new Error("20ft container quantity '" + quantity20ft + "' must be zero or a positive integer");
-		if(!Number.isInteger(quantity40ft) || quantity40ft < 0) throw new Error("40ft container quantity '" + quantity40ft + "' must be zero or a positive integer");
-
-		// Checks that both properties are not undefined/0
-		if(!quantity20ft && !quantity40ft) throw new Error("At least one quantity must be positive");
-		
-        // Validate dates
-        if(!(acceptanceDate instanceof Date)) throw new Error("'" + acceptanceDate + "' is not a valid date");
-        if(!(cutoffDate instanceof Date)) throw new Error("'" + cutoffDate + "' is not a valid date");
-        
-        // Check acceptance date is before cutoff
-        if(cutoffDate.getTime() <= acceptanceDate.getTime()) throw new Error("Cutoff '" + util.parseDateString(cutoffDate) + "' is before acceptance date '" + util.parseDateString(acceptanceDate) + "'");
-        
-        //Check addresses are different
-        if(from == to) throw new Error("Source and destination addresses are identical");
-        
-        // Check address are in database
-        if(!(await contains("locations", {name: from}))) throw new Error("Cannot find address '" + from + "'");
-        if(!(await contains("locations", {name: to}))) throw new Error("Cannot find address '" + to + "'");
+        // // Check required arguments
+        // if(!number) throw new Error("A release number is required");
+        // if(!client) throw new Error("A client is required");
+		//
+		// // Checks quantities are positive integers
+		// if(!Number.isInteger(quantity20ft) || quantity20ft < 0) throw new Error("20ft container quantity '" + quantity20ft + "' must be zero or a positive integer");
+		// if(!Number.isInteger(quantity40ft) || quantity40ft < 0) throw new Error("40ft container quantity '" + quantity40ft + "' must be zero or a positive integer");
+		//
+		// // Checks that both properties are not undefined/0
+		// if(!quantity20ft && !quantity40ft) throw new Error("At least one quantity must be positive");
+		//
+        // // Validate dates
+        // if(!(acceptanceDate instanceof Date)) throw new Error("'" + acceptanceDate + "' is not a valid date");
+        // if(!(cutoffDate instanceof Date)) throw new Error("'" + cutoffDate + "' is not a valid date");
+        //
+        // // Check acceptance date is before cutoff
+        // if(cutoffDate.getTime() <= acceptanceDate.getTime()) throw new Error("Cutoff '" + util.parseDateString(cutoffDate) + "' is before acceptance date '" + util.parseDateString(acceptanceDate) + "'");
+        //
+        // //Check addresses are different
+        // if(from == to) throw new Error("Source and destination addresses are identical");
+        //
+        // // Check address are in database
+        // if(!(await contains("locations", {name: from}))) throw new Error("Cannot find address '" + from + "'");
+        // if(!(await contains("locations", {name: to}))) throw new Error("Cannot find address '" + to + "'");
 
         let entry = {
-            number: number,
-            client: client,
-			quantity20ft: quantity20ft,
-			quantity40ft: quantity40ft,
-            acceptanceDate: acceptanceDate,
-            cutoffDate: cutoffDate,
-            from: from,
-            to: to
+			receivedDate: receivedDate,
+			release: release,
+			client: client,
+			route: route,
+			qtyTwenty: qtyTwenty,
+			qtyForty: qtyForty,
+			choose: choose,
+			containerType: containerType,
+			containerNumbers: containerNumbers,
+			dueDate: dueDate,
+			dueTime: dueTime,
+			reference: reference,
+			notes: notes,
+			status: status,
+			completeDate: completeDate,
+			invoiced: invoiced,
+			colour: colour
         }
+
         return await insert("releases", {number: number}, entry);
 	},
 	/**
@@ -613,11 +616,11 @@ const releases = {
 
 /**
  * Initializes database connection
- * @param {string} name
+ * @param {string} path Path to the database
  */
 async function start(path = PATH)
 {
-    return await MongoClient.connect(path).then(async (val) =>
+    return await MongoClient.connect(path, {useNewUrlParser: true}).then(async (val) =>
     {
         mongod = val;
 		db = val.db();
@@ -730,11 +733,11 @@ module.exports = {
     locations,
     releases,
     trucks,
+	rounds,
+	smallReleases,
     start,
     close,
     getDB,
     LocationTypeEnum,
-    TruckTypeEnum,
-    rounds,
-	smallReleases
+    TruckTypeEnum
 };

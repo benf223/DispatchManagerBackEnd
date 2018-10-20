@@ -1,11 +1,9 @@
-//https://demo-recur-api.herokuapp.com
-
 var express = require('express');
 var app = express();
 var bodyParser = require('body-parser');
 var jwt = require('./jwt.js');
 var userService = require('./user.service');
-var dbHelper = require('./db.js');
+var dbWrapper = require('./db.js');
 
 app.use(bodyParser.json());
 app.use(jwt());
@@ -21,24 +19,23 @@ var auth = express.Router(null);
 
 // Used to wake up the Heroku App
 api.get('/start', (req, res) => {
-	// res.sendStatus(200);
-	// userService.create({username: 'admin', password: 'test', firstName: 'admin', lastName: 'istrator'});
 });
 
 // Rounds assigned to each truck on a given day
 api.get('/rounds/:date', (req, res) => {
 	let params = req.params.date;
 
-	dbHelper.rounds.get(params).then((result) => {
+	dbWrapper.rounds.get(params).then((result) => {
 		res.send(result);
 	});
 });
 
+// Retrieves small releases for a given day
 api.get('/releases/:date', (req, res) => {
 	let params = req.params.date;
 
 	// Query the truncated version
-	dbHelper.smallReleases.get(params).then((result) => {
+	dbWrapper.smallReleases.get(params).then((result) => {
 		res.send(result.releases);
 	});
 });
@@ -46,42 +43,42 @@ api.get('/releases/:date', (req, res) => {
 // Retrieves all the full releases
 api.get('/full_releases', (req, res) => {
 	// Should retrieve all releases that were started within the past 30 days?
-	dbHelper.releases.getAll().then((result) => {
+	dbWrapper.releases.getAll().then((result) => {
 		res.send(result);
 	})
 });
 
-// This needs to retrieve the whole release given the parameters
+// Retrieves a full release for a given id
 api.get('/full_releases/:releaseID', (req, res) => {
 	// This is bad form need to change it.
 	let params = req.params.releaseID.split('@');
 
 	// params[0] == date
 	// params[1] == release id
-	dbHelper.releases.get(params[1]).then((result) => {
+	dbWrapper.releases.get(params[1]).then((result) => {
 		res.send(result);
 	})
 });
 
-// Gets a TruckRounds object from the frontend and will update the database with the new information
+// Receives a TruckRounds object from the frontend and updates the database with the new information
 api.post('/update_rounds/:date', (req, res) => {
 	console.log(req.body);
 	console.log(req.params.date);
 
-	dbHelper.rounds.replaceTruckRounds(req.params.date, req.truckID).then((result) => {
+	dbWrapper.rounds.replaceTruckRounds(req.params.date, req.truckID).then((result) => {
 		// Verification here?
 		res.send({result: 200});
 	});
 });
 
-// Gets a Change object from the frontend and will update the truncated version of the releases in the database with the new information
+// Receives a Change object from the frontend and updates the truncated version of the releases in the database with the new information
 api.post('/update_release/:date', (req, res) => {
 	console.log(req.body);
 	console.log(req.params.date);
 
 	if (req.body.increase1) {
 		console.log(`Increase ${req.body.increase1.release}`);
-		dbHelper.smallReleases.incOrDecQuantity(req.params.date, req.body.increase1.release, true).then((result) => {
+		dbWrapper.smallReleases.incOrDecQuantity(req.params.date, req.body.increase1.release, true).then((result) => {
 			// Verification here?
 			res.send({result: 200});
 		});
@@ -89,7 +86,7 @@ api.post('/update_release/:date', (req, res) => {
 
 	if (req.body.increase2) {
 		console.log(`Increase ${req.body.increase2.release}`);
-		dbHelper.smallReleases.incOrDecQuantity(req.params.date, req.body.increase2.release, true).then((result) => {
+		dbWrapper.smallReleases.incOrDecQuantity(req.params.date, req.body.increase2.release, true).then((result) => {
 			// Verification here?
 			res.send({result: 200});
 		});
@@ -97,7 +94,7 @@ api.post('/update_release/:date', (req, res) => {
 
 	if (req.body.decrease1) {
 		console.log(`Decrease ${req.body.decrease1.release}`);
-		dbHelper.smallReleases.incOrDecQuantity(req.params.date, req.body.decrease1.release, false).then((result) => {
+		dbWrapper.smallReleases.incOrDecQuantity(req.params.date, req.body.decrease1.release, false).then((result) => {
 			// Verification here?
 			res.send({result: 200});
 		});
@@ -105,78 +102,107 @@ api.post('/update_release/:date', (req, res) => {
 
 	if (req.body.decrease2) {
 		console.log(`Decrease ${req.body.decrease2.release}`);
-		dbHelper.smallReleases.incOrDecQuantity(req.params.date, req.body.decrease2.release, false).then((result) => {
+		dbWrapper.smallReleases.incOrDecQuantity(req.params.date, req.body.decrease2.release, false).then((result) => {
 			// Verification here?
 			res.send({result: 200});
 		});
 	}
 });
 
-// Adds a new release to the FullReleases collection and then adds a truncated version to the Releases collection
+// Receives a new release and adds it to the FullReleases collection and then adds a truncated version to the SmallReleases collection
 api.post('/add_release', (req, res) => {
 	console.log(req.body);
+	let data = req.body;
 
-	dbHelper.releases.insert('', '', 0, 0, null, null, '', '').then((result) => {
+	dbWrapper.releases.insert(data.receivedDate, data.release, data.client, data.route, data.qtyTwenty, data.qtyForty, data.choose, data.containerType, data.containerNumbers, data.dueDate, data.dueTime
+		, data.reference, data.notes, data.status, data.completeDate, data.invoiced, data.colour).then((result) => {
 		// Verification here?
-		dbHelper.smallReleases.insert(null, null, null, null, null).then((result) => {
-			// Verification here?
-			res.send({result: 200});
-		})
+		if (data.qtyTwenty)
+		{
+			dbWrapper.smallReleases.insert(data.receivedDate, data.release, 20, data.qtyTwenty, data.colour).then((result) => {
+				// Verification here?
+				if (data.qtyForty)
+				{
+					dbWrapper.smallReleases.insert(data.receivedDate, data.release, 40, data.qtyForty, data.colour).then((result) => {
+						// Verification here?
+						res.send({result: 200});
+					})
+				}
+			})
+		} else if (data.qtyForty) {
+			dbWrapper.smallReleases.insert(data.receivedDate, data.release, 40, data.qtyForty, data.colour).then((result) => {
+				// Verification here?
+				res.send({result: 200});
+			})
+		}
 	});
 });
 
+// Receives a FullRelease containing changes and replaces the release currently stored
+// TODO need to remove the release from the rounds (or cleverly reassign it (other team))
 api.post('/edit_release', (req, res) => {
 	console.log(req.body);
+	let data = req.body;
 
-	// TODO need to remove the release from the rounds (or cleverly reassign it (other team))
-
-	dbHelper.releases.remove(req.body.release.release).then((result) => {
+	dbWrapper.releases.remove(req.body.release.release).then((result) => {
 		// Verification here?
-		dbHelper.smallReleases.remove(req.body.release.release).then((result) => {
+		dbWrapper.smallReleases.remove(req.body.release.release).then((result) => {
 			// Verification here?
-			dbHelper.releases.insert('', '', 0, 0, null, null, '', '').then((result) => {
+			dbWrapper.releases.insert(data.receivedDate, data.release, data.client, data.route, data.qtyTwenty, data.qtyForty, data.choose, data.containerType, data.containerNumbers, data.dueDate, data.dueTime
+				, data.reference, data.notes, data.status, data.completeDate, data.invoiced, data.colour).then((result) => {
 				// Verification here
-				dbHelper.smallReleases.insert(null, null, null, null, null, null).then((result) => {
-					// Verification here
-					res.send({result: 200});
-				})
+				if (data.qtyTwenty)
+				{
+					dbWrapper.smallReleases.insert(data.receivedDate, data.release, 20, data.qtyTwenty, data.colour).then((result) => {
+						// Verification here?
+						if (data.qtyForty)
+						{
+							dbWrapper.smallReleases.insert(data.receivedDate, data.release, 40, data.qtyForty, data.colour).then((result) => {
+								// Verification here?
+								res.send({result: 200});
+							})
+						}
+					})
+				} else if (data.qtyForty) {
+					dbWrapper.smallReleases.insert(data.receivedDate, data.release, 40, data.qtyForty, data.colour).then((result) => {
+						// Verification here?
+						res.send({result: 200});
+					})
+				}
 			});
 		});
 	});
 });
 
-// Need to find and remove the release based on it's ID as given
+// Receives a release id and deletes it from the database
+// TODO need to remove the release from the rounds
 api.delete('/delete_release/:release', (req, res) => {
-	console.log(req.params.release);
-
-	dbHelper.releases.remove(req.params.release).then((result) => {
+	dbWrapper.releases.remove(req.params.release).then((result) => {
 		// Verification here?
-		dbHelper.smallReleases.remove(req.params.release).then((result) => {
+		dbWrapper.smallReleases.remove(req.params.release).then((result) => {
 			// Verification here
 			res.send({result: 200});
 		})
 	});
-
-	// TODO need to remove the release from the rounds
 });
 
+// Receives a user object and attempts to create a new user
 auth.post('/register', (req, res) => {
-	console.log(req.body);
-
-	userService.create(req.body).then(() => res.json({}));
+	userService.create(req.body).then((result) => res.json({message: result.firstName + ' ' + result.lastName + ' has been registered as: ' + result.username}));
 });
 
+// Receives a user object and attempts to create a authentication token
 auth.post('/login', (req, res) => {
-	console.log(req.body);
-
-	userService.authenticate(req.body).then(user => user ? res.json(user) : res.status(400).json({message : 'Error authenticating'}));
+	userService.authenticate(req.body).then((user) => {
+		res.send(user);
+	});
 });
 
 app.use('/api', api);
 app.use('/auth', auth);
 
+// Starts the server and initialises the database connection
 app.listen(process.env.PORT || 3000, () =>
 {
-	console.log("Server running");
-	dbHelper.start();
+	dbWrapper.start();
 });
