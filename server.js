@@ -6,7 +6,7 @@ var userService = require('./user.service');
 var dbWrapper = require('./db.js');
 
 app.use(bodyParser.json());
-app.use(jwt());
+// app.use(jwt());
 app.use((req, res, next) => {
 	res.header("Access-Control-Allow-Origin", "*");
 	res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
@@ -27,6 +27,8 @@ api.get('/rounds/:date', (req, res) => {
 
 	dbWrapper.rounds.get(params).then((result) => {
 		res.send(result);
+	}, (e) => {
+		res.send(null);
 	});
 });
 
@@ -36,7 +38,14 @@ api.get('/releases/:date', (req, res) => {
 
 	// Query the truncated version
 	dbWrapper.smallReleases.get(params).then((result) => {
-		res.send(result.releases);
+		if (result) {
+			res.send(result.releases);
+		} else {
+			res.send(null);
+		}
+
+	}, (e) => {
+		res.send(null);
 	});
 });
 
@@ -62,9 +71,6 @@ api.get('/full_releases/:releaseID', (req, res) => {
 
 // Receives a TruckRounds object from the frontend and updates the database with the new information
 api.post('/update_rounds/:date', (req, res) => {
-	console.log(req.body);
-	console.log(req.params.date);
-
 	dbWrapper.rounds.replaceTruckRounds(req.params.date, req.truckID).then((result) => {
 		// Verification here?
 		res.send({result: 200});
@@ -73,11 +79,7 @@ api.post('/update_rounds/:date', (req, res) => {
 
 // Receives a Change object from the frontend and updates the truncated version of the releases in the database with the new information
 api.post('/update_release/:date', (req, res) => {
-	console.log(req.body);
-	console.log(req.params.date);
-
 	if (req.body.increase1) {
-		console.log(`Increase ${req.body.increase1.release}`);
 		dbWrapper.smallReleases.incOrDecQuantity(req.params.date, req.body.increase1.release, true).then((result) => {
 			// Verification here?
 			res.send({result: 200});
@@ -85,7 +87,6 @@ api.post('/update_release/:date', (req, res) => {
 	}
 
 	if (req.body.increase2) {
-		console.log(`Increase ${req.body.increase2.release}`);
 		dbWrapper.smallReleases.incOrDecQuantity(req.params.date, req.body.increase2.release, true).then((result) => {
 			// Verification here?
 			res.send({result: 200});
@@ -93,7 +94,6 @@ api.post('/update_release/:date', (req, res) => {
 	}
 
 	if (req.body.decrease1) {
-		console.log(`Decrease ${req.body.decrease1.release}`);
 		dbWrapper.smallReleases.incOrDecQuantity(req.params.date, req.body.decrease1.release, false).then((result) => {
 			// Verification here?
 			res.send({result: 200});
@@ -101,7 +101,6 @@ api.post('/update_release/:date', (req, res) => {
 	}
 
 	if (req.body.decrease2) {
-		console.log(`Decrease ${req.body.decrease2.release}`);
 		dbWrapper.smallReleases.incOrDecQuantity(req.params.date, req.body.decrease2.release, false).then((result) => {
 			// Verification here?
 			res.send({result: 200});
@@ -111,7 +110,6 @@ api.post('/update_release/:date', (req, res) => {
 
 // Receives a new release and adds it to the FullReleases collection and then adds a truncated version to the SmallReleases collection
 api.post('/add_release', (req, res) => {
-	console.log(req.body);
 	let data = req.body;
 
 	dbWrapper.releases.insert(data.receivedDate, data.release, data.client, data.route, data.qtyTwenty, data.qtyForty, data.choose, data.containerType, data.containerNumbers, data.dueDate, data.dueTime
@@ -141,7 +139,6 @@ api.post('/add_release', (req, res) => {
 // Receives a FullRelease containing changes and replaces the release currently stored
 // TODO need to remove the release from the rounds (or cleverly reassign it (other team))
 api.post('/edit_release', (req, res) => {
-	console.log(req.body);
 	let data = req.body;
 
 	dbWrapper.releases.remove(req.body.release.release).then((result) => {
@@ -204,5 +201,11 @@ app.use('/auth', auth);
 // Starts the server and initialises the database connection
 app.listen(process.env.PORT || 3000, () =>
 {
-	dbWrapper.start();
+	dbWrapper.start().then(() => {
+		console.log('Started Database');
+	}, (e) => {
+		console.log(e);
+	});
+
+	console.log('Started Listening');
 });

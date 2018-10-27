@@ -50,7 +50,7 @@ function getEnumString(e, type)
 function parseEnum(s, type)
 {
     let e = type[s.trim().toLowerCase()];
-    if(e || e == 0) return e;
+    if(e || e === 0) return e;
     else throw new Error("'" + s + "' cannot be parsed.");
 }
 
@@ -62,7 +62,7 @@ function parseEnum(s, type)
  */
 function isValidEnum(e, type)
 {
-    return typeof Object.keys(type)[e] != "undefined";
+    return typeof Object.keys(type)[e] !== "undefined";
 }
 
 /**
@@ -91,7 +91,7 @@ const rounds = {
 
 	replaceTruckRounds: async (date, truckID, newRounds) =>
 	{
-		currentRounds = await rounds.get(date);
+		let currentRounds = await rounds.get(date);
 		currentRounds.truckRounds[indexOf(currentRounds.truckRounds.find(t => t.id === newRounds.id))] = newRounds;
 		return await update("rounds", {date: date}, currentRounds);
 	},
@@ -99,14 +99,48 @@ const rounds = {
 	// gets entry by date, inserts empty entry if none is there
 	get: async (date) =>
 	{
-		return await get("truckRounds", {date: date});
-	},
+		if (await get("truckRounds", {date: date}))
+		{
+			return await get("truckRounds", {date: date});
+		}
+		else
+		{
+			// TODO ensure that the trucks collection is functional
+			// trucks.getAll().then((res) => {
+			// 	let numberOfTrucks = res.length + 1;
+			//
+			// 	let slots = [{release: null}, {release: null}, {release: null}];
+			//
+			// 	let createdRounds = [];
+			// 	// Reads number of trucks from the trucks collection
+			// 	for (let x = 1; x < numberOfTrucks; ++x)
+			// 	{
+			// 		let round = [];
+			//
+			// 		// Assumes 8 rounds
+			// 		for (let y = 1; y < 9; ++y)
+			// 		{
+			// 			round.push({roundNumber: y, slots: slots});
+			// 		}
+			//
+			// 		let truck = {id: 'truck' + x, dayRounds: round, nightRounds: round};
+			//
+			// 		createdRounds.push(truck);
+			// 	}
+			//
+			// 	rounds.insert(date, createdRounds).then(() => {
+			// 		return get("truckRounds", {date: date});
+			// 	});
+			// });
 
+			throw Error('Not ready');
+		}
+	},
 	getAll: async () =>
 	{
 		return await getAll("truckRounds");
 	}
-}
+};
 
 // First name, last name, username, password
 
@@ -120,7 +154,7 @@ const users = {
 
 	update: async (username, query) =>
 	{
-		for(p in query)
+		for(let p in query)
 		{
 			switch(p)
 			{
@@ -130,7 +164,8 @@ const users = {
 				case "username":
 					if(await contains("users", {username: query[p]})) throw new Error("users already contains entry '" + query.username + "'");
 					break;
-				case "password": 
+				case "password":
+					// TODO verify this is needed
 					query[p] = encrypt(query[p]);
 					break;
 				default:
@@ -176,6 +211,7 @@ const users = {
 const locations = {
     /**
      * @param {string} name
+     * @param {string} address
      * @param {(string | number)} type
      * @param {string} [openingTime]
      * @param {string} [closingTime]
@@ -193,8 +229,12 @@ const locations = {
         // Validate location type
         try
         {
-            if(typeof type == "string") containerType = LocationTypeEnum.parse(type);
-            else if(!isValidEnum(type, LocationTypeEnum)) throw new Error();
+            if(typeof type === "string") {
+            	let containerType = LocationTypeEnum.parse(type);
+			}
+            else if(!isValidEnum(type, LocationTypeEnum)) {
+				throw new Error();
+			}
         }
         catch(err)
         {
@@ -223,7 +263,7 @@ const locations = {
         // Check opening time is before closing time
         if(!util.timeOfDayIsBefore(openingTime, closingTime)) throw new Error("Opening time must be before closing time");
 
-        requiresBooking = requiresBooking ? true : false;
+        requiresBooking = !!requiresBooking; //? true : false;
     
         let containsQuery = {$or: [{ name: name }, { address: address }]};
         let entry = {
@@ -250,7 +290,7 @@ const locations = {
     update: async (name, query) =>
     {
 		// Validate each passed property
-		for(p in query)
+		for(let p in query)
 		{
 			switch(p)
 			{
@@ -267,7 +307,9 @@ const locations = {
 				case "type":
 					try
 					{
-						if(typeof query[p] == "string") value = LocationTypeEnum.parse(query[p]);
+						if(typeof query[p] === "string"){
+							let value = LocationTypeEnum.parse(query[p]);
+						}
 						else if(!isValidEnum(query[p], LocationTypeEnum)) throw new Error();
 					}
 					catch(err)
@@ -349,8 +391,9 @@ const trucks = {
         // Validate type
         try
         {
-            if(typeof type == "string") containerType = TruckTypeEnum.parse(type);
-            else if(!isValidEnum(type, TruckTypeEnum)) throw new Error();
+            if(typeof type === "string"){
+				let containerType = TruckTypeEnum.parse(type);
+			} else if(!isValidEnum(type, TruckTypeEnum)) throw new Error();
         }
         catch(err)
         {
@@ -368,7 +411,7 @@ const trucks = {
     update: async (name, query) =>
     {
 		// Validate each passed property
-		for(p in query)
+		for(let p in query)
 		{
 			switch(p)
 			{
@@ -380,7 +423,7 @@ const trucks = {
 				case "type":
 					try
 					{
-						if(typeof query[p] == "string") query[p] = TruckTypeEnum.parse(query[p]);
+						if(typeof query[p] === "string") query[p] = TruckTypeEnum.parse(query[p]);
 						else if(!isValidEnum(query[p], TruckTypeEnum)) throw new Error();
 					}
 					catch(err)
@@ -417,19 +460,20 @@ const trucks = {
 
 // Update: pass id, day, boolean for up or down 1
 // Insert: release_number, size, qty, color
-// Edit: Given release id, delete record and replace with releas
+// Edit: Given release id, delete record and replace with release
 // Remove: remove from given id
 
 const smallReleases = {
 	insert: async (date, releaseNumber, size, quantity, colour) =>
 	{
-		entry = {
+		let entry = {
 			date: date,
 			releaseNumber: releaseNumber,
 			size: size,
 			quantity: quantity,
 			colour: colour
-		}
+		};
+
 		return await insert("smallReleases", {releaseNumber: releaseNumber}, entry);
 	},
 	incOrDecQuantity: async (date, releaseNumber, up) =>
@@ -443,13 +487,20 @@ const smallReleases = {
 	},
 	get: async (date) =>
 	{
-		return (await get("smallReleases", {date: date})).toArray();
+		if (await get("smallReleases", {date: date}))
+		{
+			return (await get("smallReleases", {date: date})).toArray();
+		}
+		else
+		{
+			return await null;
+		}
 	},
 	getAll: async () =>
 	{
 		return await getAll("smallReleases");
 	}
-}
+};
 
 /**
  * Orders for container deliveries received by clients
@@ -466,14 +517,23 @@ const smallReleases = {
  */
 const releases = {
     /**
-     * @param {string} number
+     * @param receivedDate
+     * @param release
      * @param {string} client
-	 * @param {number} quantity20ft
-	 * @param {number} quantity40ft
-     * @param {Date} acceptanceDate
-     * @param {Date} cutoffDate
-     * @param {string} from: must match location name from database
-     * @param {string} to: must match location name from database
+	 * @param route
+	 * @param qtyTwenty
+	 * @param qtyForty
+	 * @param choose
+	 * @param containerType
+	 * @param containerNumbers
+	 * @param dueDate
+	 * @param dueTime
+	 * @param reference
+	 * @param notes
+	 * @param status
+	 * @param completeDate
+	 * @param invoiced
+	 * @param colour
      */
     insert: async (receivedDate, release, client, route, qtyTwenty, qtyForty, choose, containerType, containerNumbers, dueDate, dueTime, reference, notes, status, completeDate, invoiced, colour) =>
     {
@@ -520,9 +580,9 @@ const releases = {
 			completeDate: completeDate,
 			invoiced: invoiced,
 			colour: colour
-        }
+        };
 
-        return await insert("releases", {number: number}, entry);
+        return await insert("releases", {release: release}, entry);
 	},
 	/**
 	 * @param {string} number
@@ -539,7 +599,7 @@ const releases = {
     update: async (number, query) =>
     {
 		// Validate passed properties
-		for(p in query)
+		for(let p in query)
 		{
 			switch(p)
 			{
@@ -550,11 +610,11 @@ const releases = {
 				// For both quantities, check that they are zero or positive integers and both are not zero
 				case "quantity20ft":
 					if(!Number.isInteger(query[p]) || query[p] < 0) throw new Error("20ft container quantity '" + query[p] + "' must be a positive integer");
-					if(!query[p] && (query.quantity40ft == 0 || (await releases.get(number)).quantity40ft == 0)) throw new Error("At least one quantity must be positive");
+					if(!query[p] && (query.quantity40ft === 0 || (await releases.get(number)).quantity40ft === 0)) throw new Error("At least one quantity must be positive");
 					break;
 				case "quantity40ft":
 					if(!Number.isInteger(query[p]) || query[p] < 0) throw new Error("40ft container quantity '" + query[p] + "' must be a positive integer");
-					if(!query[p] && (query.quantity20ft == 0 || (await releases.get(number)).quantity20ft == 0)) throw new Error("At least one quantity must be positive");
+					if(!query[p] && (query.quantity20ft === 0 || (await releases.get(number)).quantity20ft === 0)) throw new Error("At least one quantity must be positive");
 					break;
 				// Validate dates
 				case "acceptanceDate":
@@ -576,10 +636,10 @@ const releases = {
 				case "from":
 					if(!(await contains("locations", {name: query[p]}))) throw new Error("Cannot find address '" + query[p] + "'");
 					let to = query.to || (await get("releases", {number: number})).to;
-					if(query[p] == to) throw new Error("Start and end location are identical");
+					if(query[p] === to) throw new Error("Start and end location are identical");
 				case "to":
 					if(!(await contains("locations", {name: query[p]}))) throw new Error("Cannot find address '" + query[p] + "'");
-					if(!query.from && query[p] == (await get("releases", {number: number})).from) throw new Error("Start and end location are identical");
+					if(!query.from && query[p] === (await get("releases", {number: number})).from) throw new Error("Start and end location are identical");
 				case "client": break;
 				// Invalid property passed
 				default:
@@ -645,7 +705,14 @@ async function close()
  */
 async function get(collection, query)
 {
-    return await db.collection(collection).findOne(query, {projection: {_id: false}});
+	if (db)
+	{
+		return await db.collection(collection).findOne(query, {projection: {_id: false}});
+	}
+	else
+	{
+		throw new Error("Database not connected");
+	}
 }
 
 /**
@@ -655,26 +722,47 @@ async function get(collection, query)
  */
 async function getAll(collection)
 {
-    return await db.collection(collection).find({}, { projection :{ _id: false }}).toArray();
+	if (db)
+	{
+		return await db.collection(collection).find({}, { projection :{ _id: false }}).toArray();
+	}
+	else
+	{
+		throw new Error("Database not connected");
+	}
 }
 
 async function update(collection, identifierQuery, updateQuery)
 {
-	return await db.collection(collection).findOneAndUpdate(identifierQuery, {$set: updateQuery}, {returnNewDocument: true}).then((res) =>
+	if (db)
 	{
-		// Entry was not found
-		if(!res.value) throw new Error("No entry '" + util.getFirstProperty(identifierQuery) + "' found");
-		return res.value;
-	});
+		return await db.collection(collection).findOneAndUpdate(identifierQuery, {$set: updateQuery}, {returnNewDocument: true}).then((res) =>
+		{
+			// Entry was not found
+			if(!res.value) throw new Error("No entry '" + util.getFirstProperty(identifierQuery) + "' found");
+			return res.value;
+		});
+	}
+	else
+	{
+		throw new Error("Database not connected");
+	}
 }
 
 async function remove(collection, query)
 {
-	return await db.collection(collection).findOneAndDelete(query).then((res) =>
+	if (db)
 	{
-		if(!res.value) throw new Error("No entry '" + util.getFirstProperty(query) + "' found");
-		return res.value;
-	});
+		return await db.collection(collection).findOneAndDelete(query).then((res) =>
+		{
+			if(!res.value) throw new Error("No entry '" + util.getFirstProperty(query) + "' found");
+			return res.value;
+		});
+	}
+	else
+	{
+		throw new Error("Database not connected");
+	}
 }
 
 /**
@@ -688,20 +776,27 @@ async function remove(collection, query)
  */
 async function insert(collection, containsQuery, value)
 {
-    // Checks entry does not already exist
-    return await contains(collection, containsQuery).then(async (val) =>
-    {
-		if(val)
+	if (db)
+	{
+		// Checks entry does not already exist
+		return await contains(collection, containsQuery).then(async (val) =>
 		{
-			let prop = util.getFirstProperty(containsQuery);
-			prop = typeof(prop) === "object" ? "" : " '" + prop + "'";
-			throw new Error(collection + " already contains entry" + prop);
-		}
-        return await db.collection(collection).insertOne(value);
-    }).then((val) =>
-    {
-        return val.ops[0];
-    });
+			if(val)
+			{
+				let prop = util.getFirstProperty(containsQuery);
+				prop = typeof(prop) === "object" ? "" : " '" + prop + "'";
+				throw new Error(collection + " already contains entry" + prop);
+			}
+			return await db.collection(collection).insertOne(value);
+		}).then((val) =>
+		{
+			return val.ops[0];
+		});
+	}
+	else
+	{
+		throw new Error("Database not connected");
+	}
 }
 
 /**
@@ -712,12 +807,20 @@ async function insert(collection, containsQuery, value)
  */
 async function contains(collection, query)
 {
-    return await db.collection(collection).findOne(query).then((val) =>
-    {
-        return val != null;
-	});
+	if (db)
+	{
+		return await db.collection(collection).findOne(query).then((val) =>
+		{
+			return val != null;
+		});
+	}
+	else
+	{
+		throw new Error("Database not connected");
+	}
 }
 
+// TODO verify this is used
 function encrypt(str)
 {
 	return bcrypt.hashSync(str, bcrypt.genSaltSync(SALT_WORK_FACTOR));
@@ -739,5 +842,5 @@ module.exports = {
     close,
     getDB,
     LocationTypeEnum,
-    TruckTypeEnum
+    TruckTypeEnum,
 };
